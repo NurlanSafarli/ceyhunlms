@@ -28,6 +28,7 @@ import {
 import { courses, faqs, type CourseId } from './data';
 
 const contact = { phone: '+994513019525', display: '+994 51 301 95 25' };
+const pagesMode = import.meta.env.MODE === 'pages';
 const courseIcons = { 'help-desk': Headphones, 'system-admin': Server, 'network-admin': Network };
 
 function Brand({ light = false }: { light?: boolean }) {
@@ -187,7 +188,9 @@ function PrivacyDialog({ onClose }: { onClose: () => void }) {
         cavablandırmaq və dərslərlə bağlı sizinlə əlaqə saxlamaq üçün toplanır.
       </p>
       <p>
-        Məlumatlar saytın serverində saxlanılır və reklam məqsədilə üçüncü şəxslərə ötürülmür.
+        {pagesMode
+          ? 'Forma məlumatlarınızdan WhatsApp mesajı hazırlanır. WhatsApp keçidini açdıqda məlumatlarınız WhatsApp xidmətinə ötürülür; mesajı göndərdikdə müəllimə çatır. Bu versiyada müraciətlər saytın bazasında saxlanılmır. WhatsApp-ın məxfilik qaydaları tətbiq olunur.'
+          : 'Məlumatlar saytın serverində saxlanılır və reklam məqsədilə üçüncü şəxslərə ötürülmür.'}{' '}
         Formaya həssas məlumat və ya ödəniş kartı məlumatları daxil etməyin.
       </p>
       <p>
@@ -214,16 +217,51 @@ function Registration({
   const [error, setError] = useState('');
   const [reference, setReference] = useState('');
   const [submittedName, setSubmittedName] = useState('');
+  const [whatsappDraft, setWhatsappDraft] = useState('');
   const feedbackRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (status === 'success' || status === 'error') feedbackRef.current?.focus();
-  }, [status]);
+    if (status === 'success' || status === 'error' || whatsappDraft) feedbackRef.current?.focus();
+  }, [status, whatsappDraft]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (status === 'sending') return;
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
+    if (pagesMode) {
+      if (String(data.name).trim().length < 2 || data.website) {
+        setError('Ad və soyadınızı düzgün daxil edin.');
+        setStatus('error');
+        return;
+      }
+      const labels: Record<string, string> = {
+        beginner: 'Sıfırdan başlayıram',
+        basic: 'Baza biliklərim var',
+        working: 'IT sahəsində çalışıram',
+        online: 'Onlayn',
+        'in-person': 'Əyani',
+        either: 'Fərq etmir',
+      };
+      const course = courses.find((c) => c.id === data.course)?.name || 'Seçimdə kömək lazımdır';
+      const message = [
+        'Salam, Jayhun Tech dərslərinə qoşulmaq istəyirəm.',
+        `Ad və soyad: ${String(data.name).trim()}`,
+        `Telefon: ${String(data.phone).trim()}`,
+        `E-poçt: ${String(data.email).trim()}`,
+        `Kurs: ${course}`,
+        `Səviyyə: ${labels[String(data.experience)]}`,
+        `Format: ${labels[String(data.format)]}`,
+        data.message ? `Qeyd: ${String(data.message).trim()}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+      setWhatsappDraft(
+        `https://wa.me/${contact.phone.slice(1)}?text=${encodeURIComponent(message)}`,
+      );
+      setError('');
+      setStatus('idle');
+      return;
+    }
     setStatus('sending');
     setError('');
     try {
@@ -323,7 +361,12 @@ function Registration({
                   Təxminən 1 dəqiqə <Clock3 size={14} />
                 </span>
               </div>
-              <form onSubmit={submit}>
+              <form
+                onSubmit={submit}
+                onChange={() => {
+                  if (whatsappDraft) setWhatsappDraft('');
+                }}
+              >
                 <div className="form-field">
                   <label htmlFor="name">
                     Ad və soyad <span>*</span>
@@ -440,7 +483,9 @@ function Registration({
                     <button type="button" onClick={onPrivacy}>
                       Məxfilik şərtləri
                     </button>{' '}
-                    ilə tanış oldum və müraciətimlə bağlı əlaqə saxlanılmasına razıyam.
+                    {pagesMode
+                      ? 'ilə tanış oldum, məlumatlarımı WhatsApp vasitəsilə paylaşmağa və müraciətimlə bağlı əlaqə saxlanılmasına razıyam.'
+                      : 'ilə tanış oldum və müraciətimlə bağlı əlaqə saxlanılmasına razıyam.'}
                   </span>
                 </label>
                 {status === 'error' && (
@@ -448,17 +493,45 @@ function Registration({
                     {error}
                   </div>
                 )}
-                <button
-                  className="button button-dark submit-button"
-                  type="submit"
-                  disabled={status === 'sending'}
-                >
-                  {status === 'sending' ? 'Göndərilir...' : 'Müraciət göndər'}
-                  {status === 'sending' ? <span className="spinner" /> : <ArrowUpRight size={19} />}
-                </button>
+                {whatsappDraft ? (
+                  <div className="whatsapp-ready" ref={feedbackRef} tabIndex={-1} role="status">
+                    <p>
+                      Mesajınız hazırdır. Qeydiyyatı tamamlamaq üçün WhatsApp-ı açın və mesajı
+                      göndərin.
+                    </p>
+                    <a
+                      className="button button-dark submit-button"
+                      href={whatsappDraft}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
+                    >
+                      WhatsApp-da aç və göndər <MessageCircle size={18} />
+                    </a>
+                  </div>
+                ) : (
+                  <button
+                    className="button button-dark submit-button"
+                    type="submit"
+                    disabled={status === 'sending'}
+                  >
+                    {status === 'sending'
+                      ? 'Göndərilir...'
+                      : pagesMode
+                        ? 'WhatsApp mesajını hazırla'
+                        : 'Müraciət göndər'}
+                    {status === 'sending' ? (
+                      <span className="spinner" />
+                    ) : (
+                      <ArrowUpRight size={19} />
+                    )}
+                  </button>
+                )}
                 <p className="form-footnote">
-                  <ShieldCheck size={13} /> Məlumatlarınız yalnız sizinlə əlaqə üçün istifadə
-                  olunur.
+                  <ShieldCheck size={13} />{' '}
+                  {pagesMode
+                    ? 'Müraciət WhatsApp-da mesajı göndərdikdən sonra müəllimə çatır.'
+                    : 'Məlumatlarınız yalnız sizinlə əlaqə üçün istifadə olunur.'}
                 </p>
               </form>
             </>

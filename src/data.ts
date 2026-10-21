@@ -244,6 +244,8 @@ export const faqs = [
   {
     question: 'Qeydiyyatdan sonra nə baş verir?',
     answer:
-      'Müraciətiniz sistemdə saxlanılır. Müəllim təqdim etdiyiniz əlaqə vasitəsilə sizinlə əlaqə saxlayaraq məqsədinizi, uyğun proqramı və dərs cədvəlini dəqiqləşdirir.',
+      import.meta.env.MODE === 'pages'
+        ? 'Formanı doldurduqdan sonra WhatsApp mesajınız hazırlanır. “WhatsApp-da aç və göndər” düyməsini seçin və açılan söhbətdə mesajı göndərin. Yalnız bundan sonra müraciətiniz müəllimə çatır. Məqsədiniz, uyğun proqram və dərs cədvəli söhbətdə dəqiqləşdirilir.'
+        : 'Müraciətiniz sistemdə saxlanılır. Müəllim təqdim etdiyiniz əlaqə vasitəsilə sizinlə əlaqə saxlayaraq məqsədinizi, uyğun proqramı və dərs cədvəlini dəqiqləşdirir.',
   },
 ];

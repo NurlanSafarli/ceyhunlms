@@ -55,3 +55,20 @@ Məlumatların silinməsi/düzəldilməsi tələbləri müəllim tərəfindən s
 - `server/app.mjs`: validasiya, spam limiti, təkrar müraciət yoxlaması və bazaya yazma.
 
 Şriftlər lokal paketlərdən yüklənir. Sayt xarici şəkil və ya font xidmətinə bağlı deyil. Sillabus seçilmiş kurs üçün UTF-8 TXT faylı kimi endirilir. Heç bir real müraciət test məqsədilə yaradılmır.
+
+## GitHub Pages yayımı
+
+GitHub Pages üçün ayrıca statik build mövcuddur. Asset yolları `/ceyhunlms/` prefiksindən istifadə edir; müəllim məlumatları, kurslar və sillabuslar eyni qalır.
+
+```sh
+npm run build:pages
+CHROMIUM_PATH=/usr/bin/chromium npm run test:pages
+```
+
+Nəticə `dist-pages/` qovluğuna yazılır. `.github/workflows/pages.yml` hər `main` push-dan sonra build yaradıb GitHub Pages-ə yayımlayır. Repozitoriyanın **Settings → Pages → Build and deployment → Source** seçimində **GitHub Actions** seçilməlidir. İlk yayım bundan əvvəl uğursuz olarsa **Actions → Publish Jayhun Tech to GitHub Pages → Run workflow** ilə yenidən başladın.
+
+Sayt ünvanı: `https://nurlansafarli.github.io/ceyhunlms/` (ilk uğurlu Pages yayımından sonra).
+
+GitHub Pages Node.js/SQLite serverini işlətmir. Bu versiyada forma **WhatsApp mesajını hazırlayır**; tələbə keçidi açıb mesajı özü göndərir. Keçid `+994 51 301 95 25` nömrəsinə yönəlir. WhatsApp-da mesaj göndərilməyincə müraciət müəllimə çatmır; sayt uğurlu qeydiyyat iddiası göstərmir və məlumatları bazaya yazmır. WhatsApp istifadəsi üçün həmin nömrənin WhatsApp hesabı olmalıdır. Məxfilik mətni və FAQ bu rejimə uyğundur.
+
+Normal `npm run build` / `npm run dev` əvvəlki server və SQLite qeydiyyat axınını saxlayır. WhatsApp və ya başqa xarici xidmətə avtomatik mesaj göndərilmir.
