@@ -20,7 +20,7 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
   ],
   webServer: {
-    command: 'PORT=4173 DATABASE_PATH=:memory: NODE_ENV=production node server/index.mjs',
+    command: 'node tests/browser-server.mjs',
     url: 'http://127.0.0.1:4173/api/health',
     reuseExistingServer: false,
     timeout: 15_000,

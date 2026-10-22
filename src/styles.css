@@ -3796,3 +3796,7 @@ h2 {
   line-height: 1.8;
   margin-bottom: 13px;
 }
+
+.editable-copy {
+  white-space: pre-line;
+}

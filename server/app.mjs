@@ -1,14 +1,11 @@
 import express from 'express';
 import helmet from 'helmet';
-import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, chmodSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const defaultDbPath = join(projectRoot, '.local', 'registrations.sqlite');
-const courseIds = new Set(['help-desk', 'system-admin', 'network-admin', 'undecided']);
+import { join } from 'node:path';
+import { openDatabase, defaultDbPath, projectRoot, readContent } from './database.mjs';
+import { installAuth, createAdmin } from './auth.mjs';
+import { installAdmin, InputError } from './admin.mjs';
+export { defaultDbPath } from './database.mjs';
 const experiences = new Set(['beginner', 'basic', 'working']);
 const formats = new Set(['online', 'in-person', 'either']);
 
@@ -17,28 +14,13 @@ export function createApp({
   production = false,
   rateLimit = 10,
   rateWindowMs = 600_000,
+  secureCookies = production,
+  adminCredentials = null,
 } = {}) {
-  if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
-  const db = new DatabaseSync(dbPath);
-  if (dbPath !== ':memory:') chmodSync(dbPath, 0o600);
-  db.exec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA busy_timeout = 5000;
-    CREATE TABLE IF NOT EXISTS registrations (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      course TEXT NOT NULL,
-      experience TEXT NOT NULL,
-      format TEXT NOT NULL,
-      message TEXT NOT NULL DEFAULT '',
-      consent_at TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      UNIQUE(email, course)
-    );
-  `);
-
+  const db = openDatabase(dbPath);
+  if (adminCredentials && !db.prepare('SELECT 1 FROM admin_users LIMIT 1').get()) {
+    createAdmin(db, adminCredentials.username, adminCredentials.password);
+  }
   const insert = db.prepare(
     'INSERT INTO registrations (id,name,email,phone,course,experience,format,message,consent_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
   );
@@ -68,7 +50,10 @@ export function createApp({
     res.setHeader('Cache-Control', 'no-store');
     next();
   });
-  app.use(express.json({ limit: '12kb' }));
+  app.use('/api/registrations', express.json({ limit: '12kb' }));
+  app.use(express.json({ limit: '256kb' }));
+  const closeAuth = installAuth(app, db, { secureCookies });
+  installAdmin(app, db);
 
   const attempts = new Map();
   const cleanLimits = setInterval(() => {
@@ -131,7 +116,11 @@ export function createApp({
       digits.length > 15
     )
       error = 'Düzgün telefon nömrəsi daxil edin.';
-    else if (!courseIds.has(course)) error = 'Maraqlandığınız kursu seçin.';
+    else if (
+      course !== 'undecided' &&
+      !db.prepare('SELECT 1 FROM courses WHERE id=? AND published=1').get(course)
+    )
+      error = 'Maraqlandığınız kursu seçin.';
     else if (!experiences.has(experience) || !formats.has(format))
       error = 'Səviyyə və dərs formatını yoxlayın.';
     else if (message.length > 1500) error = 'Qeydiniz 1500 simvoldan uzun olmamalıdır.';
@@ -142,8 +131,7 @@ export function createApp({
     try {
       if (duplicate.get(email, course))
         return res.status(409).json({
-          error:
-            'Bu e-poçt ilə seçdiyiniz kursa artıq müraciət edilib. Dəyişiklik üçün +994 51 301 95 25 nömrəsi ilə əlaqə saxlayın.',
+          error: `Bu e-poçt ilə seçdiyiniz kursa artıq müraciət edilib. Dəyişiklik üçün ${readContent(db).settings.phoneDisplay} nömrəsi ilə əlaqə saxlayın.`,
         });
       const id = `JT-${randomUUID().slice(0, 8).toUpperCase()}`;
       const timestamp = new Date().toISOString();
@@ -161,10 +149,20 @@ export function createApp({
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Bu ünvan mövcud deyil.' }));
   if (production) {
     app.use(express.static(join(projectRoot, 'dist'), { index: false, dotfiles: 'deny' }));
-    app.get('/', (_req, res) => res.sendFile(join(projectRoot, 'dist', 'index.html')));
+    app.get(['/', '/admin', '/admin/'], (_req, res) =>
+      res.sendFile(join(projectRoot, 'dist', 'index.html')),
+    );
     app.use((_req, res) => res.status(404).type('text').send('Səhifə tapılmadı.'));
   }
   app.use((err, _req, res, _next) => {
+    if (err instanceof InputError) return res.status(err.status).json({ error: err.message });
+    if (String(err.message).includes('UNIQUE constraint'))
+      return res.status(409).json({ error: 'Bu məlumat artıq mövcuddur.' });
+    if (String(err.message).includes('FOREIGN KEY constraint'))
+      return res.status(409).json({
+        error:
+          'Əlaqəli qrup, vəsait və ya nəticələr mövcuddur. Əvvəlcə əlaqəli məlumatları idarə edin.',
+      });
     if (err.type === 'entity.too.large')
       return res.status(413).json({ error: 'Müraciətin həcmi icazə veriləndən böyükdür.' });
     if (err.type === 'entity.parse.failed')
@@ -176,6 +174,7 @@ export function createApp({
     app,
     close: () => {
       clearInterval(cleanLimits);
+      closeAuth();
       db.close();
     },
   };

@@ -25,24 +25,29 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { courses, faqs, type CourseId } from './data';
+import { type CourseId } from './data';
+import { useContent } from './content';
 
-const contact = { phone: '+994513019525', display: '+994 51 301 95 25' };
 const pagesMode = import.meta.env.MODE === 'pages';
-const courseIcons = { 'help-desk': Headphones, 'system-admin': Server, 'network-admin': Network };
+const courseIcons: Record<string, typeof Headphones> = {
+  'help-desk': Headphones,
+  'system-admin': Server,
+  'network-admin': Network,
+};
 
 function Brand({ light = false }: { light?: boolean }) {
+  const { settings } = useContent();
   return (
     <a
       className={`brand ${light ? 'brand-light' : ''}`}
       href="#home"
-      aria-label="Jayhun Tech — ana səhifə"
+      aria-label={`${settings.brandName} — ana səhifə`}
     >
       <span className="brand-symbol">
         <Code2 size={23} strokeWidth={2.5} />
       </span>
       <span>
-        jayhun<span className="brand-tech">tech</span>
+        {settings.brandName}
         <span className="brand-dot">.</span>
       </span>
     </a>
@@ -163,6 +168,8 @@ function LabVisual() {
 }
 
 function PrivacyDialog({ onClose }: { onClose: () => void }) {
+  const { settings } = useContent();
+  const contact = { phone: settings.phone, display: settings.phoneDisplay };
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -213,11 +220,14 @@ function Registration({
   onCourseChange: (id: string) => void;
   onPrivacy: () => void;
 }) {
+  const { courses, settings } = useContent();
+  const contact = { phone: settings.phone, display: settings.phoneDisplay };
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
   const [reference, setReference] = useState('');
   const [submittedName, setSubmittedName] = useState('');
   const [whatsappDraft, setWhatsappDraft] = useState('');
+  useEffect(() => setWhatsappDraft(''), [selectedCourse]);
   const feedbackRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (status === 'success' || status === 'error' || whatsappDraft) feedbackRef.current?.focus();
@@ -244,7 +254,7 @@ function Registration({
       };
       const course = courses.find((c) => c.id === data.course)?.name || 'Seçimdə kömək lazımdır';
       const message = [
-        'Salam, Jayhun Tech dərslərinə qoşulmaq istəyirəm.',
+        `Salam, ${settings.brandName} dərslərinə qoşulmaq istəyirəm.`,
         `Ad və soyad: ${String(data.name).trim()}`,
         `Telefon: ${String(data.phone).trim()}`,
         `E-poçt: ${String(data.email).trim()}`,
@@ -290,20 +300,14 @@ function Registration({
   }
 
   return (
-    <section className="registration-section" id="register">
+    <section className="registration-section" id="register" hidden={!settings.showRegistration}>
       <div className="section-container registration-layout">
         <div className="registration-copy">
           <span className="eyebrow light-eyebrow">
             <span /> GƏLƏCƏYİNƏ İLK ADDIM
           </span>
-          <h2>
-            Birlikdə başlayaq<span className="lime-text">.</span>
-          </h2>
-          <p>
-            IT-yə marağın var? Onu bacarığa çevirək.
-            <br />
-            Formanı doldur, sənə uyğun yolu birlikdə seçək.
-          </p>
+          <h2>{settings.registrationTitle}</h2>
+          <p className="editable-copy">{settings.registrationDescription}</p>
           <div className="registration-points">
             <div>
               <CheckCircle2 size={20} />
@@ -543,6 +547,23 @@ function Registration({
 }
 
 export default function App() {
+  const { courses, faqs: storedFaqs, settings } = useContent();
+  const contact = { phone: settings.phone, display: settings.phoneDisplay };
+  const visibility: Record<string, boolean> = {
+    about: settings.showAbout,
+    courses: settings.showCourses,
+    syllabus: settings.showSyllabus && courses.length > 0,
+    faq: settings.showFaq,
+  };
+  const faqs = storedFaqs.map((f) =>
+    pagesMode && f.id === 'faq-5'
+      ? {
+          ...f,
+          answer:
+            'Formanı doldurduqdan sonra WhatsApp mesajını hazırlayın. WhatsApp keçidini açıb mesajı göndərdikdə müraciət müəllimə çatır.',
+        }
+      : f,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [syllabusId, setSyllabusId] = useState<CourseId>('help-desk');
@@ -550,7 +571,16 @@ export default function App() {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [privacyOpen, setPrivacyOpen] = useState(false);
-  const activeCourse = courses.find((c) => c.id === syllabusId)!;
+  const activeCourse = courses.find((c) => c.id === syllabusId) || courses[0];
+  useEffect(() => {
+    if (!courses.some((c) => c.id === syllabusId)) setSyllabusId(courses[0]?.id || '');
+    if (
+      selectedCourse &&
+      selectedCourse !== 'undecided' &&
+      !courses.some((c) => c.id === selectedCourse)
+    )
+      setSelectedCourse('');
+  }, [courses, syllabusId, selectedCourse]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -578,8 +608,9 @@ export default function App() {
     setSelectedCourse(id);
   }
   function downloadSyllabus() {
+    if (!activeCourse) return;
     const text =
-      `JAYHUN TECH — ${activeCourse.name}\n${activeCourse.duration} · ${activeCourse.level}\n\nİlkin biliklər: ${activeCourse.prerequisites}\n\n` +
+      `${settings.brandName.toUpperCase()} — ${activeCourse.name}\n${activeCourse.duration} · ${activeCourse.level}\n\nİlkin biliklər: ${activeCourse.prerequisites}\n\n` +
       activeCourse.modules
         .map(
           (m, i) =>
@@ -615,21 +646,32 @@ export default function App() {
               { id: 'courses', label: 'Tədris istiqamətləri' },
               { id: 'syllabus', label: 'Sillabus' },
               { id: 'faq', label: 'Suallar' },
-            ].map((link) => (
-              <a
-                key={link.id}
-                href={`#${link.id}`}
-                className={activeSection === link.id ? 'active' : ''}
-                onClick={() => setMenuOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-            <a className="mobile-register" href="#register" onClick={() => setMenuOpen(false)}>
+            ]
+              .filter((link) => visibility[link.id])
+              .map((link) => (
+                <a
+                  key={link.id}
+                  href={`#${link.id}`}
+                  className={activeSection === link.id ? 'active' : ''}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </a>
+              ))}
+            <a
+              className="mobile-register"
+              href="#register"
+              hidden={!settings.showRegistration}
+              onClick={() => setMenuOpen(false)}
+            >
               Qeydiyyatdan keç <ArrowUpRight size={16} />
             </a>
           </nav>
-          <a href="#register" className="button button-dark header-cta">
+          <a
+            href="#register"
+            hidden={!settings.showRegistration}
+            className="button button-dark header-cta"
+          >
             <span className="desktop-label">Qeydiyyatdan keç</span>
             <span className="mobile-label">Qeydiyyat</span> <ArrowUpRight size={16} />
           </a>
@@ -648,29 +690,24 @@ export default function App() {
         <section className="hero section-container" id="home">
           <div className="hero-copy">
             <div className="availability">
-              <span className="live-dot" /> Gələcəyin üçün yeni bir başlanğıc
+              <span className="live-dot" /> {settings.heroBadge}
             </div>
             <h1>
-              IT karyerana
+              {settings.heroLine1}
               <br />
               <span className="highlight-word">
-                doğru addım
+                {settings.heroLine2}
                 <span className="hand-underline" />
               </span>
               <br />
-              buradan başlayır<span className="green-dot">.</span>
+              {settings.heroLine3}
             </h1>
-            <p>
-              Sadə izah. Real praktika. Güclü təməl.
-              <br />
-              Help Desk, sistem və şəbəkə inzibatçılığını
-              <br className="desktop-break" /> mənimlə addım-addım öyrən.
-            </p>
+            <p className="editable-copy">{settings.heroDescription}</p>
             <div className="hero-buttons">
-              <a href="#courses" className="button button-dark">
+              <a href="#courses" hidden={!settings.showCourses} className="button button-dark">
                 Öz istiqamətini seç <ArrowUpRight size={18} />
               </a>
-              <a href="#about" className="button button-text">
+              <a href="#about" hidden={!settings.showAbout} className="button button-text">
                 <span className="play-circle">
                   <Play size={13} fill="currentColor" />
                 </span>
@@ -753,23 +790,23 @@ export default function App() {
             </span>
           </div>
         </div>
-        <section className="courses-section section-container" id="courses">
+        <section
+          className="courses-section section-container"
+          id="courses"
+          hidden={!settings.showCourses}
+        >
           <div className="section-heading">
             <div>
               <span className="eyebrow">
                 <span /> TƏDRİS İSTİQAMƏTLƏRİ
               </span>
-              <h2>Sənin yolun hansıdır?</h2>
+              <h2>{settings.coursesTitle}</h2>
             </div>
-            <p>
-              İlk addımını at və ya mövcud biliklərini inkişaf etdir.
-              <br />
-              Hər istiqamətdə məqsəd eynidir: real bacarıq.
-            </p>
+            <p className="editable-copy">{settings.coursesDescription}</p>
           </div>
           <div className="course-grid">
             {courses.map((course, index) => {
-              const Icon = courseIcons[course.id];
+              const Icon = courseIcons[course.icon] || Headphones;
               return (
                 <article
                   key={course.id}
@@ -800,11 +837,16 @@ export default function App() {
                     ))}
                   </div>
                   <div className="course-card-bottom">
-                    <a href="#syllabus" onClick={() => chooseSyllabus(course.id)}>
+                    <a
+                      href="#syllabus"
+                      hidden={!settings.showSyllabus}
+                      onClick={() => chooseSyllabus(course.id)}
+                    >
                       Sillabusa bax <ArrowUpRight size={17} />
                     </a>
                     <a
                       href="#register"
+                      hidden={!settings.showRegistration}
                       className="course-register"
                       aria-label={`${course.name} kursuna qeydiyyat`}
                       onClick={() => register(course.id)}
@@ -820,12 +862,16 @@ export default function App() {
             <span>
               <MessageCircle size={17} /> Hansından başlayacağını bilmirsən?
             </span>
-            <a href="#register" onClick={() => setSelectedCourse('undecided')}>
+            <a
+              href="#register"
+              hidden={!settings.showRegistration}
+              onClick={() => setSelectedCourse('undecided')}
+            >
               Birlikdə seçək <ArrowRight size={15} />
             </a>
           </div>
         </section>
-        <section className="about-section" id="about">
+        <section className="about-section" id="about" hidden={!settings.showAbout}>
           <div className="section-container about-layout">
             <div className="about-art">
               <div className="about-art-header">
@@ -840,8 +886,8 @@ export default function App() {
               </div>
               <div className="about-name">
                 <div>
-                  <h3>Jayhun</h3>
-                  <span>IT müəllimi & praktika bələdçin</span>
+                  <h3>{settings.instructorName}</h3>
+                  <span>{settings.instructorRole}</span>
                 </div>
                 <span className="about-signature">J.</span>
               </div>
@@ -854,203 +900,176 @@ export default function App() {
                 <span /> TANIŞ OLAQ
               </span>
               <h2>
-                Texnologiya mürəkkəbdir.
+                {settings.aboutTitle}
                 <br />
-                <span className="muted-heading">
-                  Onu öyrənmək
-                  <br />
-                  belə olmamalıdır.
-                </span>
+                <span className="muted-heading editable-copy">{settings.aboutSubtitle}</span>
               </h2>
-              <p>
-                Salam, mən Jayhun. IT-ni sadəcə terminlər və əmrlər toplusu kimi deyil, problemləri
-                həll etmək bacarığı kimi öyrədirəm.
-              </p>
-              <p>
-                Məqsədim hər mövzunun arxasındakı “niyə?” sualına cavab verməkdir. Birlikdə
-                sistemlər quracaq, xətalarla qarşılaşacaq və onları həll edəcəyik. Çünki ən yaxşı
-                öyrənmə — edərək öyrənməkdir.
-              </p>
+              <p>{settings.bio1}</p>
+              <p>{settings.bio2}</p>
               <div className="about-values">
-                <span>
-                  <CheckCircle2 size={18} /> Sadə və anlaşılan izah
-                </span>
-                <span>
-                  <CheckCircle2 size={18} /> Addım-addım praktika
-                </span>
-                <span>
-                  <CheckCircle2 size={18} /> Fərdi geribildirim
-                </span>
-                <span>
-                  <CheckCircle2 size={18} /> İş həyatına uyğun mövzular
-                </span>
+                {settings.aboutValues
+                  .split('\n')
+                  .filter(Boolean)
+                  .map((value) => (
+                    <span key={value}>
+                      <CheckCircle2 size={18} />
+                      {value}
+                    </span>
+                  ))}
               </div>
-              <a href="#register" className="about-link">
+              <a href="#register" hidden={!settings.showRegistration} className="about-link">
                 Gəl, məqsədin haqqında danışaq <ArrowUpRight size={18} />
               </a>
             </div>
           </div>
         </section>
-        <section className="syllabus-section section-container" id="syllabus">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">
-                <span /> ADDIM-ADDIM İNKİŞAF
-              </span>
-              <h2>Nə öyrənəcəksən?</h2>
-            </div>
-            <button className="button button-outline download-button" onClick={downloadSyllabus}>
-              <ArrowDownToLine size={17} /> Sillabusu yüklə <span>TXT</span>
-            </button>
-          </div>
-          <div className="syllabus-tabs" role="tablist" aria-label="Kurs sillabusları">
-            {courses.map((course) => {
-              const Icon = courseIcons[course.id];
-              return (
-                <button
-                  id={`tab-${course.id}`}
-                  key={course.id}
-                  role="tab"
-                  aria-selected={syllabusId === course.id}
-                  aria-controls="syllabus-panel"
-                  tabIndex={syllabusId === course.id ? 0 : -1}
-                  onClick={() => chooseSyllabus(course.id)}
-                  onKeyDown={(event) => {
-                    let next: number | null = null;
-                    const index = courses.findIndex((c) => c.id === course.id);
-                    if (event.key === 'ArrowRight') next = (index + 1) % courses.length;
-                    if (event.key === 'ArrowLeft')
-                      next = (index + courses.length - 1) % courses.length;
-                    if (event.key === 'Home') next = 0;
-                    if (event.key === 'End') next = courses.length - 1;
-                    if (next !== null) {
-                      event.preventDefault();
-                      chooseSyllabus(courses[next].id);
-                      document.getElementById(`tab-${courses[next].id}`)?.focus();
-                    }
-                  }}
-                >
-                  <Icon size={18} />
-                  {course.shortName}
-                </button>
-              );
-            })}
-          </div>
-          <div
-            className="syllabus-layout"
-            id="syllabus-panel"
-            role="tabpanel"
-            aria-labelledby={`tab-${syllabusId}`}
+        {activeCourse && (
+          <section
+            className="syllabus-section section-container"
+            id="syllabus"
+            hidden={!settings.showSyllabus}
           >
-            <aside className="syllabus-summary">
-              <span className="syllabus-summary-icon">
-                <BookOpen size={27} strokeWidth={1.5} />
-              </span>
-              <h3>{activeCourse.name}</h3>
-              <p>{activeCourse.prerequisites}</p>
-              <div className="syllabus-stats">
-                <span>
-                  <Clock3 size={16} /> {activeCourse.duration}
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  <span /> ADDIM-ADDIM İNKİŞAF
                 </span>
-                <span>
-                  <Layers3 size={16} /> {activeCourse.modules.length} modul
-                </span>
+                <h2>{settings.syllabusTitle}</h2>
               </div>
-              <div className="syllabus-outcome">
-                <span>KURSUN SONUNDA</span>
-                <p>{activeCourse.outcome}</p>
-              </div>
-              <a
-                href="#register"
-                className="button button-dark"
-                onClick={() => register(syllabusId)}
-              >
-                Bu kursa qoşul <ArrowUpRight size={17} />
-              </a>
-            </aside>
-            <div className="modules">
-              {activeCourse.modules.map((module, index) => (
-                <div
-                  className={`module ${expandedModule === index ? 'is-expanded' : ''}`}
-                  key={`${syllabusId}-${index}`}
-                >
-                  <h3>
-                    <button
-                      aria-expanded={expandedModule === index}
-                      aria-controls={`module-${index}`}
-                      onClick={() => setExpandedModule(expandedModule === index ? null : index)}
-                    >
-                      <span className="module-number">0{index + 1}</span>
-                      <span className="module-title">
-                        {module.title}
-                        <span>{module.duration}</span>
-                      </span>
-                      <Plus size={20} className="module-toggle" />
-                    </button>
-                  </h3>
-                  <div
-                    id={`module-${index}`}
-                    className="module-content"
-                    hidden={expandedModule !== index}
+              <button className="button button-outline download-button" onClick={downloadSyllabus}>
+                <ArrowDownToLine size={17} /> Sillabusu yüklə <span>TXT</span>
+              </button>
+            </div>
+            <div className="syllabus-tabs" role="tablist" aria-label="Kurs sillabusları">
+              {courses.map((course) => {
+                const Icon = courseIcons[course.icon] || Headphones;
+                return (
+                  <button
+                    id={`tab-${course.id}`}
+                    key={course.id}
+                    role="tab"
+                    aria-selected={syllabusId === course.id}
+                    aria-controls="syllabus-panel"
+                    tabIndex={syllabusId === course.id ? 0 : -1}
+                    onClick={() => chooseSyllabus(course.id)}
+                    onKeyDown={(event) => {
+                      let next: number | null = null;
+                      const index = courses.findIndex((c) => c.id === course.id);
+                      if (event.key === 'ArrowRight') next = (index + 1) % courses.length;
+                      if (event.key === 'ArrowLeft')
+                        next = (index + courses.length - 1) % courses.length;
+                      if (event.key === 'Home') next = 0;
+                      if (event.key === 'End') next = courses.length - 1;
+                      if (next !== null) {
+                        event.preventDefault();
+                        chooseSyllabus(courses[next].id);
+                        document.getElementById(`tab-${courses[next].id}`)?.focus();
+                      }
+                    }}
                   >
-                    <ul>
-                      {module.topics.map((topic) => (
-                        <li key={topic}>
-                          <Check size={14} />
-                          {topic}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="module-lab">
-                      <Terminal size={16} />
-                      <span>
-                        <strong>Praktiki tapşırıq</strong>
-                        {module.lab}
-                      </span>
+                    <Icon size={18} />
+                    {course.shortName}
+                  </button>
+                );
+              })}
+            </div>
+            <div
+              className="syllabus-layout"
+              id="syllabus-panel"
+              role="tabpanel"
+              aria-labelledby={`tab-${syllabusId}`}
+            >
+              <aside className="syllabus-summary">
+                <span className="syllabus-summary-icon">
+                  <BookOpen size={27} strokeWidth={1.5} />
+                </span>
+                <h3>{activeCourse.name}</h3>
+                <p>{activeCourse.prerequisites}</p>
+                <div className="syllabus-stats">
+                  <span>
+                    <Clock3 size={16} /> {activeCourse.duration}
+                  </span>
+                  <span>
+                    <Layers3 size={16} /> {activeCourse.modules.length} modul
+                  </span>
+                </div>
+                <div className="syllabus-outcome">
+                  <span>KURSUN SONUNDA</span>
+                  <p>{activeCourse.outcome}</p>
+                </div>
+                <a
+                  href="#register"
+                  hidden={!settings.showRegistration}
+                  className="button button-dark"
+                  onClick={() => register(syllabusId)}
+                >
+                  Bu kursa qoşul <ArrowUpRight size={17} />
+                </a>
+              </aside>
+              <div className="modules">
+                {activeCourse.modules.map((module, index) => (
+                  <div
+                    className={`module ${expandedModule === index ? 'is-expanded' : ''}`}
+                    key={`${syllabusId}-${index}`}
+                  >
+                    <h3>
+                      <button
+                        aria-expanded={expandedModule === index}
+                        aria-controls={`module-${index}`}
+                        onClick={() => setExpandedModule(expandedModule === index ? null : index)}
+                      >
+                        <span className="module-number">0{index + 1}</span>
+                        <span className="module-title">
+                          {module.title}
+                          <span>{module.duration}</span>
+                        </span>
+                        <Plus size={20} className="module-toggle" />
+                      </button>
+                    </h3>
+                    <div
+                      id={`module-${index}`}
+                      className="module-content"
+                      hidden={expandedModule !== index}
+                    >
+                      <ul>
+                        {module.topics.map((topic) => (
+                          <li key={topic}>
+                            <Check size={14} />
+                            {topic}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="module-lab">
+                        <Terminal size={16} />
+                        <span>
+                          <strong>Praktiki tapşırıq</strong>
+                          {module.lab}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-        <section className="process-section">
+          </section>
+        )}
+        <section className="process-section" hidden={!settings.showProcess}>
           <div className="section-container">
             <div className="section-heading">
               <div>
                 <span className="eyebrow">
                   <span /> DƏRSDƏN REAL BACARIĞA
                 </span>
-                <h2>Sadəcə dinləməyəcəksən.</h2>
+                <h2>{settings.processTitle}</h2>
               </div>
-              <p>
-                Öyrən, tətbiq et, nəticəni gör.
-                <br />
-                Hər dərsdə bir addım daha irəli.
-              </p>
+              <p className="editable-copy">{settings.processDescription}</p>
             </div>
             <div className="process-grid">
               {[
-                {
-                  icon: BookOpen,
-                  title: 'Məntiqini anla',
-                  text: 'Hər mövzunu sadə dillə və gündəlik nümunələrlə öyrən. Nə etdiyini və niyə etdiyini bil.',
-                },
-                {
-                  icon: Terminal,
-                  title: 'Özün sına',
-                  text: 'Virtual laboratoriyada sistemlər qur, əmrləri işlə və səhvlərdən öyrən. Praktika dərsin bir hissəsidir.',
-                },
-                {
-                  icon: Users,
-                  title: 'Birlikdə həll edək',
-                  text: 'Suallarını ver, geribildirim al və çətin mövzuların üzərindən birlikdə keçək.',
-                },
-                {
-                  icon: Layers3,
-                  title: 'Layihəni tamamla',
-                  text: 'Öyrəndiklərini ofis infrastrukturu, texniki dəstək və ya şəbəkə layihəsində birləşdir.',
-                },
+                { icon: BookOpen, title: settings.step1Title, text: settings.step1Description },
+                { icon: Terminal, title: settings.step2Title, text: settings.step2Description },
+                { icon: Users, title: settings.step3Title, text: settings.step3Description },
+                { icon: Layers3, title: settings.step4Title, text: settings.step4Description },
               ].map((step, i) => (
                 <article className="process-step" key={step.title}>
                   <div className="process-step-top">
@@ -1071,7 +1090,7 @@ export default function App() {
           onCourseChange={setSelectedCourse}
           onPrivacy={() => setPrivacyOpen(true)}
         />
-        <section className="faq-section section-container" id="faq">
+        <section className="faq-section section-container" id="faq" hidden={!settings.showFaq}>
           <div className="faq-copy">
             <span className="eyebrow">
               <span /> AĞLINDA SUAL QALMASIN
@@ -1116,21 +1135,25 @@ export default function App() {
           <div className="footer-top">
             <div>
               <Brand light />
-              <p>
-                Bilikdən bacarığa.
-                <br />
-                Sənin IT yolunda, birlikdə.
-              </p>
+              <p className="editable-copy">{settings.footerDescription}</p>
             </div>
             <div className="footer-nav">
               <span>KƏŞF ET</span>
-              <a href="#about">Haqqımda</a>
-              <a href="#courses">Tədris istiqamətləri</a>
-              <a href="#syllabus">Sillabus</a>
+              <a href="#about" hidden={!settings.showAbout}>
+                Haqqımda
+              </a>
+              <a href="#courses" hidden={!settings.showCourses}>
+                Tədris istiqamətləri
+              </a>
+              <a href="#syllabus" hidden={!settings.showSyllabus}>
+                Sillabus
+              </a>
             </div>
             <div className="footer-nav">
               <span>İLK ADDIM</span>
-              <a href="#register">Dərslərə qeydiyyat</a>
+              <a href="#register" hidden={!settings.showRegistration}>
+                Dərslərə qeydiyyat
+              </a>
               <a href="#faq">Tez-tez verilən suallar</a>
               <button onClick={() => setPrivacyOpen(true)}>Məxfilik şərtləri</button>
             </div>
@@ -1144,7 +1167,9 @@ export default function App() {
             </div>
           </div>
           <div className="footer-bottom">
-            <span>© {new Date().getFullYear()} Jayhun Tech. Bütün hüquqlar qorunur.</span>
+            <span>
+              © {new Date().getFullYear()} {settings.brandName}. Bütün hüquqlar qorunur.
+            </span>
             <a href="#home">
               Yuxarı qayıt <ArrowRight size={14} />
             </a>
