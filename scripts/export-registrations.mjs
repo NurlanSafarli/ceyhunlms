@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
-import { defaultDbPath } from '../server/app.mjs';
+import { databasePath } from '../server/config.mjs';
 
-const db = new DatabaseSync(process.env.DATABASE_PATH || defaultDbPath, { readOnly: true });
+const db = new DatabaseSync(databasePath(), { readOnly: true });
 const rows = db
   .prepare(
     'SELECT id,name,email,phone,course,experience,format,message,consent_at,created_at FROM registrations ORDER BY created_at DESC',

@@ -9,3 +9,7 @@ dist-pages/
 test-results/
 playwright-report/
 *.log
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*

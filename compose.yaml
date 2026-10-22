@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3001'
+      DATABASE_PATH: /data/registrations.sqlite
+      COOKIE_SECURE: 'true'
+      TRUST_PROXY_HOPS: '1'
+    volumes:
+      - jayhun_data:/data
+    # Only Caddy can reach the application; no direct public HTTP port.
+    expose:
+      - '3001'
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env to your real hostname}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  jayhun_data:
+  caddy_data:
+  caddy_config:

@@ -16,6 +16,7 @@ export function createApp({
   rateWindowMs = 600_000,
   secureCookies = production,
   adminCredentials = null,
+  trustProxy = false,
 } = {}) {
   const db = openDatabase(dbPath);
   if (adminCredentials && !db.prepare('SELECT 1 FROM admin_users LIMIT 1').get()) {
@@ -27,6 +28,7 @@ export function createApp({
   const duplicate = db.prepare('SELECT 1 FROM registrations WHERE email = ? AND course = ?');
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', trustProxy);
   app.use(
     helmet({
       contentSecurityPolicy: production
@@ -72,7 +74,7 @@ export function createApp({
   });
 
   app.post('/api/registrations', (req, res) => {
-    // Do not trust user-supplied forwarding headers when counting requests.
+    // Forwarding headers are trusted only for the configured deployment proxy chain.
     const key = req.ip ?? 'unknown';
     const now = Date.now();
     let attempt = attempts.get(key);
