@@ -8,10 +8,10 @@
   -moz-osx-font-smoothing: grayscale;
   font-optical-sizing: auto;
   --ink: #243247;
-  --canvas: #f7f9fc;
-  --accent: #3563c1;
-  --accent-hover: #294f9e;
-  --accent-soft: #e6edff;
+  --canvas: #fbfcff;
+  --accent: #2f63d8;
+  --accent-hover: #2452b7;
+  --accent-soft: #e5eeff;
   --green: #3a485f;
   --lime: var(--accent-soft);
   --muted: #526075;
@@ -147,6 +147,7 @@ h2 {
 .button-dark {
   background: var(--accent);
   color: white;
+  box-shadow: 0 4px 12px #2f63d81a;
 }
 .button-dark:hover {
   background: var(--accent-hover);
@@ -800,7 +801,7 @@ h2 {
 .tech-strip {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  background: #edf0f6;
+  background: #f2f6ff;
 }
 .tech-strip-inner {
   display: flex;
@@ -937,15 +938,15 @@ h2 {
   margin-bottom: 25px;
 }
 .course-icon {
-  background: #e9edf3;
+  background: #edf3ff;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 53px;
   height: 53px;
-  border: 1px solid #d3dae7;
+  border: 1px solid #d7e4ff;
   border-radius: 12px;
-  color: #42526c;
+  color: var(--accent);
 }
 .course-number {
   font: 10px monospace;
@@ -1038,23 +1039,24 @@ h2 {
   color: var(--ink);
 }
 .featured-course {
-  background: #e7ebf2;
-  border-color: #ced6e4;
+  background: #f0f6ff;
+  border-color: #bfd5ff;
 }
 .featured-course .course-icon {
-  background: #ced7e5;
-  border-color: #c4cedf;
+  background: #dfeaff;
+  border-color: #c9dcff;
 }
 .featured-course .course-tags span {
-  background: #d7deeb;
+  background: #e1ecff;
   color: var(--muted);
 }
 .featured-course .course-card-bottom {
   border-color: #c5cfe0;
 }
 .featured-course .course-register {
-  background: #c5cfe0;
-  border-color: #bac6da;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 .course-help {
   display: flex;
@@ -1080,7 +1082,7 @@ h2 {
 }
 /* About */
 .about-section {
-  background: #e9edf4;
+  background: #f3f7ff;
   border-top: 1px solid #dbe1ec;
   border-bottom: 1px solid #dbe1ec;
   padding: 74px 0;
@@ -1093,11 +1095,11 @@ h2 {
 }
 .about-art {
   border-radius: 10px;
-  background: #d5dce9;
+  background: linear-gradient(135deg, #e7efff, #edf9fc);
   padding: 24px 28px 20px;
   position: relative;
   overflow: hidden;
-  border: 1px solid #c6d0e1;
+  border: 1px solid #cbdfff;
   min-height: 394px;
 }
 .about-art-header {
@@ -1209,7 +1211,7 @@ h2 {
   margin-bottom: 21px;
 }
 .muted-heading {
-  color: #5772a1;
+  color: var(--accent);
 }
 .about-copy > p {
   font-size: 11px;
@@ -1468,7 +1470,7 @@ h2 {
 .process-section {
   border-top: 1px solid #d9e0ec;
   padding: 63px 0 72px;
-  background: #eceff5;
+  background: #f4f8ff;
 }
 .process-section h2 {
   font-size: 35px;
@@ -1525,7 +1527,7 @@ h2 {
 }
 /* Registration */
 .registration-section {
-  background: #eef3fc;
+  background: linear-gradient(120deg, #edf4ff, #f3faff);
   background-image: none;
   background-size: 19px 19px;
   padding: 73px 0;
@@ -1906,7 +1908,7 @@ h2 {
   padding: 0 34px 21px 0;
 }
 .site-footer {
-  background: #e7ebf2;
+  background: #f0f5ff;
   border-top: 1px solid #d4dbe8;
   padding-top: 46px;
 }

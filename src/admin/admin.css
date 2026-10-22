@@ -589,8 +589,8 @@
   gap: 6px;
 }
 .ad-stat-featured {
-  background: #dbe2ed;
-  border-color: #c1ccde;
+  background: #edf4ff;
+  border-color: #c7daff;
 }
 .ad-stat-featured > div {
   color: var(--muted);
@@ -675,8 +675,8 @@
   color: var(--muted);
 }
 .ad-banner {
-  background: #e0e5ef;
-  border: 1px solid #cfd7e5;
+  background: #f0f6ff;
+  border: 1px solid #d2e2ff;
   display: flex;
   align-items: center;
   gap: 17px;
@@ -691,8 +691,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ced6e4;
-  color: var(--muted);
+  background: #e0ecff;
+  color: var(--accent);
   flex-shrink: 0;
 }
 .ad-banner h3 {
