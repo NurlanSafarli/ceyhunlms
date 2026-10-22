@@ -75,13 +75,13 @@ function LabVisual() {
       <svg className="lab-connectors" viewBox="0 0 550 430" fill="none" aria-hidden="true">
         <path
           d="M155 144 H275 V265 H426"
-          stroke="#a1b99d"
+          stroke="#8ea9d1"
           strokeWidth="1.5"
           strokeDasharray="5 7"
         />
-        <path d="M150 321 H275 V265" stroke="#a1b99d" strokeWidth="1.5" strokeDasharray="5 7" />
-        <circle cx="275" cy="265" r="5" fill="#d9f47b" />
-        <circle cx="275" cy="144" r="4" fill="#d9f47b" />
+        <path d="M150 321 H275 V265" stroke="#8ea9d1" strokeWidth="1.5" strokeDasharray="5 7" />
+        <circle cx="275" cy="265" r="5" fill="#b8ccf4" />
+        <circle cx="275" cy="144" r="4" fill="#b8ccf4" />
       </svg>
       <div className="floating-label label-network">
         <Network size={15} />
