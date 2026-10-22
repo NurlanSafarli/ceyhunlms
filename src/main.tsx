@@ -6,14 +6,15 @@ import './styles.css';
 import App from './App';
 import { ContentProvider } from './content';
 const Admin = lazy(() => import('./admin/Admin'));
-const adminRoute =
-  import.meta.env.MODE !== 'pages' && /^\/admin\/?$/.test(window.location.pathname);
+const PagesAdmin = lazy(() => import('./admin/PagesAdmin'));
+const route = window.location.pathname.slice(import.meta.env.BASE_URL.length);
+const adminRoute = /^admin(?:\/|\/index\.html)?$/.test(route);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {adminRoute ? (
       <Suspense fallback={<p>Panel yüklənir…</p>}>
-        <Admin />
+        {import.meta.env.MODE === 'pages' ? <PagesAdmin /> : <Admin />}
       </Suspense>
     ) : (
       <ContentProvider>

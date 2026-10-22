@@ -76,7 +76,7 @@ Normal `npm run build` / `npm run dev` əvvəlki server və SQLite qeydiyyat ax�
 
 ## Admin panel və ilk giriş
 
-Panel serverli versiyanın **`/admin`** ünvanındadır. GitHub Pages Node.js serverini işlətmədiyi üçün bu ünvan GitHub Pages-də admin panel açmır. Paneldəki dəyişikliklər serverli sayta tətbiq olunur; statik GitHub Pages saytına avtomatik ötürülmür. WhatsApp-dan gələn müraciətlər admin panelə əl ilə əlavə edilə bilər.
+İşlək panel serverli versiyanın **`/admin`** ünvanındadır. GitHub Pages-də **https://nurlansafarli.github.io/ceyhunlms/admin/** ünvanı ayrıca giriş səhifəsini açır. Server qoşulmayıbsa, səhifə bunu aydın bildirir və parol qəbul etmir. Server qoşulduqdan sonra “Panelə daxil ol” həmin serverdəki qorunan panelə aparır. Paneldəki dəyişikliklər serverli sayta tətbiq olunur; statik GitHub Pages saytına avtomatik ötürülmür. WhatsApp-dan gələn müraciətlər admin panelə əl ilə əlavə edilə bilər.
 
 Admin parolu repozitoriyada saxlanmır və standart giriş parolu yoxdur. Hesabı yaratmağın iki yolu var:
 
@@ -110,3 +110,35 @@ Production rejimində HTTPS tələb olunur: sessiya kukisi `Secure`, `HttpOnly`,
 Əlaqəli qiymət, qrup və ya müraciət məlumatı olan qeydlərin silinməsi bloklanır. Əvvəlcə əlaqəli qeydləri idarə edin və ya kurs/qrupu arxivləyin. Köhnə müraciət bazası ilk start zamanı məlumat itirmədən yenilənir; başlanğıc məzmun yalnız bir dəfə əlavə edilir, silinmiş məzmun növbəti startda geri qayıtmır.
 
 Brauzer testləri `tests/browser-server.mjs` ilə ayrı yaddaş bazasında test admini yaradır. Oradakı test hesabı real serverdə yaradılmır.
+
+## Admin paneli serverə yerləşdirmək
+
+GitHub Pages yalnız statik faylları təqdim edir. Parollar, tələbələr, qruplar və nəticələri saxlayan tətbiq üçün **Node.js 24, qalıcı disk və HTTPS** olan hosting lazımdır. Hazırda repozitoriyaya server xidməti qoşulmayıb. GitHub-a push etmək ayrıca hosting yaratmır.
+
+`Dockerfile` tətbiqi yerləşdirməyə hazırlayır. Serverdə image yaradın:
+
+```sh
+docker build -t jayhun-tech .
+```
+
+Hosting-in təhlükəsiz dəyişənlər bölməsində `ADMIN_USERNAME` və ən azı 12 simvolluq `ADMIN_PASSWORD` təyin edin; `/data` üçün qalıcı disk/volume qoşun. Bu adlara `VITE_` prefiksi əlavə etməyin: parol frontend build-ə daxil edilməməlidir. Tətbiqin portu `3001`, sağlamlıq yoxlaması `/api/health`-dir. Bir instansiya işlədin. HTTPS reverse proxy arxasında sessiya kukiləri təhlükəsiz qalır.
+
+Öz Docker serverinizdə dəyişənləri Git-ə daxil edilməyən, `chmod 600 .env` ilə qorunan `.env` faylına yazdıqdan sonra:
+
+```sh
+docker run -d --name jayhun-tech --restart unless-stopped \
+  --env-file .env \
+  --mount type=volume,source=jayhun-data,target=/data \
+  -p 127.0.0.1:3001:3001 jayhun-tech
+```
+
+Bu əmr yalnız lokal port açır; öz domeniniz üçün HTTPS reverse proxy qurulmalıdır. İlk admin server başlayanda yaradılır. Sonradan parolu interaktiv dəyişmək üçün `docker exec -it jayhun-tech env -u ADMIN_PASSWORD npm run admin:create -- --reset` istifadə edin. Konteyner yenilənərkən `jayhun-data` volume-unu silməyin.
+
+Serverdə `/admin` işlədikdən sonra GitHub Pages girişini ona bağlayın:
+
+1. GitHub repozitoriyasında **Settings → Secrets and variables → Actions → Variables** açın.
+2. **`ADMIN_PANEL_URL`** adlı dəyişən yaradın; dəyəri serverinizin tam HTTPS admin ünvanı olsun, məsələn `https://your-domain.example/admin`. Bu nümunə ünvanı real domeninizlə əvəz edin. Buraya parol və ya token yazmayın.
+3. **Actions → Publish Jayhun Tech to GitHub Pages → Run workflow** başladın.
+4. **https://nurlansafarli.github.io/ceyhunlms/admin/** açın və “Panelə daxil ol” seçin.
+
+Lokal Pages build üçün eyni açıq ünvan `VITE_ADMIN_URL` dəyişəni ilə verilə bilər. `build:pages` real `dist-pages/admin/index.html` yaradır; `/admin`, `/admin/` və səhifənin yenilənməsi SPA fallback-dən asılı deyil. Pages testləri də həqiqi statik serverdə işləyir. Giriş parolu yalnız serverin öz ünvanında daxil edilir; üçüncü tərəf kukilərinə və CORS istisnalarına ehtiyac yoxdur.

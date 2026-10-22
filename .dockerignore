@@ -1,0 +1,10 @@
+.git
+.local
+.env*
+node_modules
+dist
+dist-pages
+test-results
+playwright-report
+*.log
+*.tsbuildinfo
