@@ -1801,3 +1801,23 @@
 .ad-photo-editor p {
   max-width: none;
 }
+
+.ad-instructor-upload {
+  border: 1px dashed #b9ccec;
+  background: #f3f7ff;
+  border-radius: 10px;
+  padding: 20px;
+}
+.ad-instructor-upload > p {
+  max-width: none;
+  margin: 8px 0 16px;
+}
+.ad-instructor-upload input::file-selector-button {
+  padding: 10px 16px;
+  margin-right: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
