@@ -1,4 +1,5 @@
 import express from 'express';
+import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import { defaults, readContent } from './database.mjs';
 
@@ -148,11 +149,67 @@ export function installAdmin(app, db) {
         .all(),
     }),
   );
+  app.get('/api/public/instructor-photo', (_req, res) => {
+    const photo = db.prepare("SELECT data FROM public_images WHERE id='instructor'").get();
+    if (!photo) return res.status(404).json({ error: 'Şəkil tapılmadı.' });
+    res.type('image/webp').send(Buffer.from(photo.data));
+  });
+  app.put(
+    '/api/admin/instructor-photo',
+    express.raw({ type: 'application/octet-stream', limit: '5mb' }),
+    async (req, res) => {
+      if (!Buffer.isBuffer(req.body) || !req.body.length) fail('Şəkil faylı tələb olunur.');
+      let image;
+      try {
+        const input = sharp(req.body, { limitInputPixels: 25000000, failOn: 'warning' });
+        const metadata = await input.metadata();
+        if (!['jpeg', 'png', 'webp'].includes(metadata.format) || (metadata.pages || 1) > 1)
+          fail('Yalnız statik JPG, PNG və WebP şəkilləri qəbul olunur.');
+        image = await input
+          .rotate()
+          .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 85 })
+          .toBuffer();
+      } catch {
+        fail('Şəkil oxunmadı. Etibarlı JPG, PNG və ya WebP seçin (maksimum 25 meqapiksel).');
+      }
+      const version = randomUUID();
+      db.prepare(
+        "INSERT INTO public_images VALUES ('instructor',?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,version=excluded.version",
+      ).run(image, version);
+      res.json({ instructorPhotoUrl: `/api/public/instructor-photo?v=${version}` });
+    },
+  );
+  app.delete('/api/admin/instructor-photo', (_req, res) => {
+    db.prepare("DELETE FROM public_images WHERE id='instructor'").run();
+    res.json({ instructorPhotoUrl: '' });
+  });
+
   app.get('/api/admin/settings', (_req, res) => res.json(readContent(db, false).settings));
   app.put('/api/admin/settings', (req, res) => {
     const b = body(req),
       current = readContent(db, false).settings;
     for (const [key, value] of Object.entries(b)) {
+      if (key === 'instructorPhotoUrl') continue; // Derived from the separately uploaded image.
+      if (key === 'solutions') {
+        if (!Array.isArray(value) || value.length > 12) fail('Ən çox 12 IT həlli əlavə edin.');
+        const ids = new Set();
+        current.solutions = value.map((item) => {
+          if (!item || typeof item !== 'object' || Array.isArray(item))
+            fail('IT həlli düzgün deyil.');
+          const id = text(item, 'id', 100, true);
+          if (!/^[a-zA-Z0-9_-]+$/.test(id) || ids.has(id))
+            fail('IT həllinin kodu unikal olmalıdır.');
+          ids.add(id);
+          return {
+            id,
+            title: text(item, 'title', 120, true),
+            description: text(item, 'description', 1500, true),
+            published: !!bool(item, 'published'),
+          };
+        });
+        continue;
+      }
       if (!Object.hasOwn(defaults.settings, key)) fail('Naməlum məzmun sahəsi.');
       current[key] =
         typeof defaults.settings[key] === 'boolean' ? !!bool(b, key) : text(b, key, 6000);

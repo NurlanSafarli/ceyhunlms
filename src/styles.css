@@ -933,9 +933,9 @@ h2 {
   overflow: hidden;
 }
 .course-card:nth-child(3n + 2) {
-  --card-bg: #f0ebff;
-  --card-accent: #6942b5;
-  --card-border: #ded3f5;
+  --card-bg: #fff0ee;
+  --card-accent: #a53d39;
+  --card-border: #f3ceca;
 }
 .course-card:nth-child(3n) {
   --card-bg: #e5f5f3;
@@ -3838,4 +3838,69 @@ h2 {
 .social-link:hover {
   background: #f6f8ff;
   box-shadow: 0 4px 12px #24324712;
+}
+
+.course-card.course-card-system {
+  --card-bg: #fff0ee;
+  --card-accent: #a53d39;
+  --card-border: #f3ceca;
+}
+.instructor-photo {
+  display: block;
+  width: 100%;
+  height: 245px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+.solutions-section {
+  padding-block: 75px;
+  scroll-margin-top: 100px;
+}
+.solutions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.solution-card {
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.solution-number {
+  color: var(--accent);
+  font: 12px monospace;
+  margin-bottom: 24px;
+}
+.solution-card h3 {
+  font-size: 22px;
+  letter-spacing: -0.6px;
+  margin-bottom: 14px;
+}
+.solution-card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.85;
+  margin-bottom: 24px;
+}
+.solution-card a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: auto;
+}
+@media (max-width: 760px) {
+  .solutions-grid {
+    grid-template-columns: 1fr;
+  }
+  .solutions-section {
+    padding-block: 48px;
+  }
 }

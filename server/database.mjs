@@ -21,6 +21,7 @@ export function openDatabase(dbPath = defaultDbPath) {
     );
     CREATE TABLE IF NOT EXISTS admin_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, admin_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS public_images (id TEXT PRIMARY KEY, data BLOB NOT NULL, version TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS site_settings (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS courses (id TEXT PRIMARY KEY, data TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS faqs (id TEXT PRIMARY KEY, question TEXT NOT NULL, answer TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0);
@@ -72,6 +73,9 @@ export function readContent(db, publishedOnly = true) {
     ...defaults.settings,
     ...JSON.parse(db.prepare('SELECT data FROM site_settings WHERE id=1').get().data),
   };
+  const photo = db.prepare("SELECT version FROM public_images WHERE id='instructor'").get();
+  settings.instructorPhotoUrl = photo ? `/api/public/instructor-photo?v=${photo.version}` : '';
+  if (publishedOnly) settings.solutions = settings.solutions.filter((item) => item.published);
   const where = publishedOnly ? ' WHERE published=1' : '';
   const courses = db
     .prepare(`SELECT * FROM courses${where} ORDER BY sort_order,id`)

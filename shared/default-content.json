@@ -39,7 +39,31 @@
     "showSyllabus": true,
     "showProcess": true,
     "showRegistration": true,
-    "showFaq": true
+    "showFaq": true,
+    "instructorPhotoUrl": "",
+    "showSolutions": true,
+    "solutionsTitle": "Biznesiniz üçün IT həllər",
+    "solutionsDescription": "İşinizi asanlaşdıran, ehtiyacınıza uyğun texniki xidmətlər.",
+    "solutions": [
+      {
+        "id": "support",
+        "title": "Texniki dəstək və Help Desk",
+        "description": "Kompüterlərin sazlanması, proqram təminatının quraşdırılması və gündəlik texniki problemlərin həlli.",
+        "published": true
+      },
+      {
+        "id": "systems",
+        "title": "Server və sistem idarəetməsi",
+        "description": "Windows və Linux serverlərinin qurulması, istifadəçi hesablarının və ehtiyat nüsxələrin idarə edilməsi.",
+        "published": true
+      },
+      {
+        "id": "networks",
+        "title": "Şəbəkə və Wi-Fi həlləri",
+        "description": "Ofis şəbəkəsinin planlanması, router və switch sazlanması, təhlükəsiz Wi-Fi bağlantısının qurulması.",
+        "published": true
+      }
+    ]
   },
   "courses": [
     {

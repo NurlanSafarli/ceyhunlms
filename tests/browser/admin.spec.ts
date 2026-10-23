@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { test, expect, type Page } from '@playwright/test';
 
 async function login(page: Page) {
@@ -180,4 +181,66 @@ test('CMS changes appear publicly and new courses support editable modules', asy
   page.once('dialog', (dialog) => dialog.accept());
   await row.getByRole('button', { name: `${title} sil`, exact: true }).click();
   await expect(row).toHaveCount(0);
+});
+
+test('teacher photo and IT solution settings publish and can be removed', async ({
+  page,
+}, info) => {
+  await login(page);
+  await nav(page, 'Sayt məzmunu');
+  const image = await sharp({
+    create: { width: 80, height: 100, channels: 3, background: '#e0ecff' },
+  })
+    .png()
+    .toBuffer();
+  await page
+    .getByLabel('Şəkil əlavə et və ya dəyiş', { exact: true })
+    .setInputFiles({ name: 'portrait.png', mimeType: 'image/png', buffer: image });
+  await expect(page.getByRole('status')).toContainText('Şəkil yükləndi');
+  await page.getByRole('button', { name: 'IT həlli əlavə et', exact: true }).click();
+  const fieldset = page.locator('.ad-solutions-editor fieldset').last();
+  const title = `Bulud həlli ${info.project.name}`;
+  await fieldset.getByLabel('Xidmətin adı', { exact: true }).fill(title);
+  await fieldset
+    .getByLabel('Xidmətin təsviri', { exact: true })
+    .fill('Bulud sistemlərinin sazlanması.');
+  await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
+  await expect(page.locator('.ad-toast')).toContainText('Sayt məzmunu yeniləndi');
+  const publicPage = await page.context().newPage();
+  await publicPage.goto('/');
+  await expect(
+    publicPage.locator('#solutions').getByRole('heading', { name: title }),
+  ).toBeVisible();
+  await expect(publicPage.locator('.instructor-photo')).toBeVisible();
+  await publicPage.locator('.instructor-photo').scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      publicPage
+        .locator('.instructor-photo')
+        .evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0),
+    )
+    .toBe(true);
+  const menu = publicPage.getByRole('button', { name: 'Menyunu aç' });
+  if (await menu.isVisible()) await menu.click();
+  await publicPage
+    .getByRole('navigation', { name: 'Əsas naviqasiya' })
+    .getByRole('link', { name: 'IT həllər', exact: true })
+    .click();
+  await expect(publicPage).toHaveURL(/#solutions$/);
+  await fieldset.getByLabel('Xidmətin adı', { exact: true }).fill(title + ' yeniləndi');
+  await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
+  await expect(page.getByRole('button', { name: 'Məzmunu yadda saxla' })).toBeEnabled();
+  await publicPage.reload();
+  await expect(publicPage.locator('#solutions')).toContainText(title + ' yeniləndi');
+  page.once('dialog', (dialog) => dialog.accept());
+  await fieldset.getByRole('button', { name: 'Xidməti sil', exact: true }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Şəkli sil', exact: true }).click();
+  await expect(page.getByText('Şəkil silindi.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
+  await expect(page.getByRole('button', { name: 'Məzmunu yadda saxla' })).toBeEnabled();
+  await publicPage.reload();
+  await expect(publicPage.locator('.instructor-photo')).toHaveCount(0);
+  await expect(publicPage.locator('#solutions')).not.toContainText(title);
+  await publicPage.close();
 });

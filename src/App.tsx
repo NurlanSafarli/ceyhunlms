@@ -556,6 +556,7 @@ export default function App() {
     courses: settings.showCourses,
     syllabus: settings.showSyllabus && courses.length > 0,
     faq: settings.showFaq,
+    solutions: settings.showSolutions && settings.solutions.some((item) => item.published),
   };
   const faqs = storedFaqs.map((f) =>
     pagesMode && f.id === 'faq-5'
@@ -647,6 +648,7 @@ export default function App() {
               { id: 'about', label: 'Haqqımda' },
               { id: 'courses', label: 'Tədris istiqamətləri' },
               { id: 'syllabus', label: 'Sillabus' },
+              { id: 'solutions', label: 'IT həllər' },
               { id: 'faq', label: 'Suallar' },
             ]
               .filter((link) => visibility[link.id])
@@ -810,7 +812,10 @@ export default function App() {
             {courses.map((course) => {
               const Icon = courseIcons[course.icon] || Headphones;
               return (
-                <article key={course.id} className="course-card">
+                <article
+                  key={course.id}
+                  className={`course-card ${course.icon === 'system-admin' ? 'course-card-system' : ''}`}
+                >
                   <div className="course-card-top">
                     <span className="course-icon">
                       <Icon size={26} strokeWidth={1.6} />
@@ -877,12 +882,21 @@ export default function App() {
                 <span>BEHIND THE SCREENS</span>
                 <ArrowUpRight size={18} />
               </div>
-              <div className="about-monogram">
-                <span>J</span>
-                <span className="monogram-dot" />
-                <div className="monogram-orbit" />
-                <span className="monogram-code">&lt;/&gt;</span>
-              </div>
+              {settings.instructorPhotoUrl ? (
+                <img
+                  className="instructor-photo"
+                  src={settings.instructorPhotoUrl}
+                  alt={settings.instructorName}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="about-monogram">
+                  <span>J</span>
+                  <span className="monogram-dot" />
+                  <div className="monogram-orbit" />
+                  <span className="monogram-code">&lt;/&gt;</span>
+                </div>
+              )}
               <div className="about-name">
                 <div>
                   <h3>{settings.instructorName}</h3>
@@ -1052,6 +1066,36 @@ export default function App() {
             </div>
           </section>
         )}
+        <section
+          id="solutions"
+          className="solutions-section section-container"
+          hidden={!visibility.solutions}
+        >
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">
+                <span /> IT HƏLLƏR
+              </span>
+              <h2>{settings.solutionsTitle}</h2>
+            </div>
+            <p className="editable-copy">{settings.solutionsDescription}</p>
+          </div>
+          <div className="solutions-grid">
+            {settings.solutions
+              .filter((item) => item.published)
+              .map((item, index) => (
+                <article className="solution-card" key={item.id}>
+                  <span className="solution-number">{String(index + 1).padStart(2, '0')}</span>
+                  <h3>{item.title}</h3>
+                  <p className="editable-copy">{item.description}</p>
+                  <a href={`tel:${contact.phone}`}>
+                    Əlaqə saxla <ArrowUpRight size={17} />
+                  </a>
+                </article>
+              ))}
+          </div>
+        </section>
+
         <section className="process-section" hidden={!settings.showProcess}>
           <div className="section-container">
             <div className="section-heading">

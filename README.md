@@ -86,6 +86,10 @@ ZIP-dən istifadə edirsinizsə `.local` və `.env` fayllarını qoruyun, yeni k
 
 Sosial linklər üçün **Sayt məzmunu → Sosial şəbəkələr** bölməsində WhatsApp, LinkedIn və Instagram ünvanlarını `https://` ilə daxil edib **Məzmunu yadda saxla** düyməsinə basın. Linklər saytın əlaqə və alt hissələrində görünür. İkonu gizlətmək üçün linki silib yadda saxlayın. WhatsApp əvvəlcədən müəllimin təsdiqlənmiş nömrəsinə qoşulub; digər profillər daxil edilənədək gizlidir. Lokal paneldəki dəyişikliklər lokal sayta aiddir; GitHub Pages üçün statik linklər `shared/default-content.json` faylında saxlanılır.
 
+**Müəllim şəkli:** **Sayt məzmunu → Müəllimin şəkli** bölməsindən JPG, PNG və ya WebP yükləyin (maksimum 5 MB / 25 meqapiksel). Şəkil dərhal yayımlanır; dəyişmək və silmək mümkündür. Server şəkli ölçüləndirib WebP formatına çevirir və metadatanı silir. Şəkil SQLite bazasında saxlanılır və ehtiyat nüsxəyə daxildir.
+
+**IT həllər:** **Sayt məzmunu → IT həllər** bölməsində başlığı, izahı və xidmətləri dəyişin. **IT həlli əlavə et** ilə yeni xidmət yaradın; ayrıca xidməti və ya bütün bölməni gizlədə, xidməti silə bilərsiniz. Sonda **Məzmunu yadda saxla** düyməsinə basın. Yayımlanmış xidmətlər varsa, header-də **IT həllər** keçidi görünür. İlkin mətnlər texniki dəstək, server və şəbəkə xidmətləri üçün redaktə edilə bilən şablonlardır.
+
 ## Admin paneli serverə yerləşdirmək
 
 Server aldıqda **eyni tətbiqi və lokal ehtiyat nüsxəni** istifadə edin. `Dockerfile`, `compose.yaml` və `deploy/Caddyfile` qalıcı verilənlər bazası, domen və avtomatik HTTPS üçün hazırdır. Lokal HTTP ayarları serverə ötürülmür; server rejimində giriş HTTPS tələb edir.

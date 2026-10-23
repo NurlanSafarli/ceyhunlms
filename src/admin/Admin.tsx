@@ -1,3 +1,4 @@
+import ContentExtras from './ContentExtras';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
@@ -1148,6 +1149,7 @@ export default function Admin() {
                       </div>
                     </section>
                   ))}
+                  <ContentExtras settings={settings} setSettings={setSettings} request={request} />
                   <div className="ad-settings-save">
                     <p>Yadda saxlanılan dəyişikliklər serverli saytda görünür.</p>
                     <button className="ad-btn ad-primary" disabled={saving}>

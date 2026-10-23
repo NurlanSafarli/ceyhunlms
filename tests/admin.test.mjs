@@ -1,3 +1,5 @@
+import sharp from 'sharp';
+import { transferDatabase } from '../server/database-transfer.mjs';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -515,6 +517,119 @@ test('social profile settings validate URLs, publish changes and support hiding 
   });
   assert.equal(cleared.status, 200);
   assert.equal((await call('/api/public/content', { auth: false })).data.settings.instagramUrl, '');
+});
+
+test('instructor photo upload validates images, survives backup and can be removed', async () => {
+  const image = await sharp({
+    create: { width: 100, height: 140, channels: 3, background: '#dceaff' },
+  })
+    .png()
+    .toBuffer();
+  const upload = (raw, extra = {}) =>
+    call('/api/admin/instructor-photo', {
+      method: 'PUT',
+      raw,
+      headers: { 'Content-Type': 'application/octet-stream' },
+      ...extra,
+    });
+  assert.equal((await upload(image, { auth: false })).status, 401);
+  assert.equal(
+    (
+      await upload(image, {
+        headers: { 'Content-Type': 'application/octet-stream', 'X-CSRF-Token': 'wrong' },
+      })
+    ).status,
+    403,
+  );
+  const first = await upload(image);
+  assert.equal(first.status, 200);
+  const photoUrl = first.data.instructorPhotoUrl;
+  const response = await fetch(base + photoUrl);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /image\/webp/);
+  assert.equal((await sharp(Buffer.from(await response.arrayBuffer())).metadata()).width, 100);
+  assert.equal(
+    (await upload(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))).status,
+    400,
+  );
+  assert.equal((await upload(Buffer.alloc(5 * 1024 * 1024 + 1))).status, 413);
+  assert.equal(
+    (await call('/api/public/content', { auth: false })).data.settings.instructorPhotoUrl,
+    photoUrl,
+  );
+  const backup = join(dir, 'with-photo.sqlite');
+  transferDatabase(dbPath, backup);
+  const restored = openDatabase(backup);
+  assert.ok(
+    restored.prepare("SELECT data FROM public_images WHERE id='instructor'").get().data.length,
+  );
+  restored.close();
+  const replacement = await upload(image);
+  assert.notEqual(replacement.data.instructorPhotoUrl, photoUrl);
+  assert.equal((await call('/api/admin/instructor-photo', { method: 'DELETE' })).status, 200);
+  assert.equal((await fetch(base + photoUrl)).status, 404);
+  assert.equal(
+    (await call('/api/public/content', { auth: false })).data.settings.instructorPhotoUrl,
+    '',
+  );
+});
+
+test('IT solutions can be created, edited, hidden and deleted without reseeding', async () => {
+  const solutions = [
+    {
+      id: 'test-solution',
+      title: 'Ofis IT dəstəyi',
+      description: 'Texniki dəstək xidməti.',
+      published: true,
+    },
+  ];
+  assert.equal(
+    (await call('/api/admin/settings', { method: 'PUT', body: { solutions } })).status,
+    200,
+  );
+  assert.equal(
+    (await call('/api/public/content', { auth: false })).data.settings.solutions[0].title,
+    solutions[0].title,
+  );
+  solutions[0].title = 'Yenilənmiş xidmət';
+  solutions[0].published = false;
+  assert.equal(
+    (await call('/api/admin/settings', { method: 'PUT', body: { solutions } })).status,
+    200,
+  );
+  assert.equal((await call('/api/admin/settings')).data.solutions[0].title, solutions[0].title);
+  assert.deepEqual(
+    (await call('/api/public/content', { auth: false })).data.settings.solutions,
+    [],
+  );
+  assert.equal(
+    (
+      await call('/api/admin/settings', {
+        method: 'PUT',
+        body: { solutions: [...solutions, ...solutions] },
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await call('/api/admin/settings', {
+        method: 'PUT',
+        body: { solutions: [{ ...solutions[0], title: '' }] },
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (await call('/api/admin/settings', { method: 'PUT', body: { solutions: [] } })).status,
+    200,
+  );
+  const reopened = openDatabase(dbPath);
+  assert.deepEqual(
+    JSON.parse(reopened.prepare('SELECT data FROM site_settings').get().data).solutions,
+    [],
+  );
+  reopened.close();
 });
 
 test('logout immediately revokes the server-side session', async () => {
