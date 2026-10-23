@@ -3826,11 +3826,18 @@ h2 {
     background 0.2s,
     box-shadow 0.2s;
 }
+.social-link > svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  transform: none;
+}
 .social-whatsapp {
-  color: #23734c;
+  color: #168348;
 }
 .social-linkedin {
-  color: #1d64a0;
+  color: #0a66c2;
 }
 .social-instagram {
   color: #a43e7c;
