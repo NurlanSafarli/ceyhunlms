@@ -160,6 +160,18 @@ export function installAdmin(app, db) {
     if (!current.brandName || !current.instructorName) fail('Brend və müəllim adı boş ola bilməz.');
     if (!/^\+[1-9]\d{6,14}$/.test(current.phone))
       fail('Telefonu beynəlxalq formatda daxil edin: +994...');
+    for (const key of ['whatsappUrl', 'linkedinUrl', 'instagramUrl']) {
+      if (!current[key]) continue;
+      let url;
+      try {
+        url = new URL(current[key]);
+      } catch {
+        fail(`${key}: düzgün HTTPS linki daxil edin.`);
+      }
+      if (current[key].length > 2048 || url.protocol !== 'https:' || url.username || url.password)
+        fail(`${key}: düzgün HTTPS linki daxil edin.`);
+      current[key] = url.href;
+    }
     db.prepare('UPDATE site_settings SET data=? WHERE id=1').run(JSON.stringify(current));
     res.json(current);
   });

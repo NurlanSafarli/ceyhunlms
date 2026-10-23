@@ -11,7 +11,7 @@ export type Section = Collection | 'dashboard' | 'settings';
 export type Field = {
   key: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'number' | 'date' | 'datetime-local' | 'checkbox';
+  type?: 'url' | 'text' | 'textarea' | 'select' | 'number' | 'date' | 'datetime-local' | 'checkbox';
   required?: boolean;
   options?: [string, string][];
   source?: 'courses' | 'groups' | 'students' | 'exams';
@@ -326,6 +326,30 @@ export const settingsSections: { title: string; description: string; fields: Fie
       { key: 'phone', label: 'Telefon (beynəlxalq format)', required: true },
       { key: 'phoneDisplay', label: 'Saytda görünən telefon', required: true },
       { key: 'footerDescription', label: 'Alt hissənin mətni', type: 'textarea' },
+    ],
+  },
+  {
+    title: 'Sosial şəbəkələr',
+    description: 'Tam HTTPS linkini daxil edin. Boş saxlanılan linkin ikonu saytda gizlənir.',
+    fields: [
+      {
+        key: 'whatsappUrl',
+        label: 'WhatsApp linki',
+        type: 'url',
+        help: 'Məsələn: https://wa.me/994513019525',
+      },
+      {
+        key: 'linkedinUrl',
+        label: 'LinkedIn linki',
+        type: 'url',
+        help: 'Şəxsi və ya şirkət profilinizin linki',
+      },
+      {
+        key: 'instagramUrl',
+        label: 'Instagram linki',
+        type: 'url',
+        help: 'Instagram profilinizin linki',
+      },
     ],
   },
   {

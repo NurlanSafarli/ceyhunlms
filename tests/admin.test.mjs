@@ -486,6 +486,37 @@ test('related entities can be deleted in a safe, explicit order', async () => {
   assert.equal(stats.registrations, 0);
   assert.equal(stats.results, 0);
 });
+test('social profile settings validate URLs, publish changes and support hiding icons', async () => {
+  const links = {
+    whatsappUrl: 'https://wa.me/994513019525',
+    linkedinUrl: 'https://www.linkedin.com/in/example-teacher',
+    instagramUrl: 'https://www.instagram.com/example-teacher/',
+  };
+  assert.equal((await call('/api/admin/settings', { method: 'PUT', body: links })).status, 200);
+  const published = (await call('/api/public/content', { auth: false })).data.settings;
+  for (const [key, value] of Object.entries(links)) assert.equal(published[key], value);
+  for (const invalid of [
+    'javascript:alert(1)',
+    'http://example.com',
+    '//example.com',
+    'https://user:password@example.com',
+    'not a url',
+  ]) {
+    assert.equal(
+      (await call('/api/admin/settings', { method: 'PUT', body: { instagramUrl: invalid } }))
+        .status,
+      400,
+    );
+    assert.equal((await call('/api/admin/settings')).data.instagramUrl, links.instagramUrl);
+  }
+  const cleared = await call('/api/admin/settings', {
+    method: 'PUT',
+    body: { linkedinUrl: '', instagramUrl: '' },
+  });
+  assert.equal(cleared.status, 200);
+  assert.equal((await call('/api/public/content', { auth: false })).data.settings.instagramUrl, '');
+});
+
 test('logout immediately revokes the server-side session', async () => {
   assert.equal((await call('/api/admin/logout', { method: 'POST' })).status, 200);
   assert.equal((await call('/api/admin/session')).status, 401);

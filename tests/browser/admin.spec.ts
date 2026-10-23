@@ -122,14 +122,45 @@ test('CMS changes appear publicly and new courses support editable modules', asy
   await nav(page, 'Sayt məzmunu');
   const heading = `Admin məzmunu ${info.project.name}`;
   await page.getByLabel('Başlıq — 1-ci sətir', { exact: true }).fill(heading);
+  await page.getByLabel('WhatsApp linki', { exact: true }).fill('https://wa.me/994513019525');
+  await page
+    .getByLabel('LinkedIn linki', { exact: true })
+    .fill('https://www.linkedin.com/in/example-teacher');
+  await page
+    .getByLabel('Instagram linki', { exact: true })
+    .fill('https://www.instagram.com/example-teacher/');
   await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
   await expect(page.getByRole('status')).toContainText('Sayt məzmunu yeniləndi');
   const publicPage = await page.context().newPage();
   await publicPage.goto('/');
   await expect(publicPage.getByRole('heading', { level: 1 })).toContainText(heading);
+
+  for (const [name, href] of [
+    ['WhatsApp', 'https://wa.me/994513019525'],
+    ['LinkedIn', 'https://www.linkedin.com/in/example-teacher'],
+    ['Instagram', 'https://www.instagram.com/example-teacher/'],
+  ]) {
+    const link = publicPage
+      .locator('footer')
+      .getByRole('link', { name: `${name} (yeni pəncərədə)`, exact: true });
+    await expect(link).toHaveAttribute('href', href);
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  }
   await publicPage.close();
   await page.getByLabel('Başlıq — 1-ci sətir', { exact: true }).fill('IT karyerana');
+  await page.getByLabel('LinkedIn linki', { exact: true }).fill('');
+  await page.getByLabel('Instagram linki', { exact: true }).fill('');
   await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
+  await expect(page.getByRole('status')).toContainText('Sayt məzmunu yeniləndi');
+  const clearedPage = await page.context().newPage();
+  await clearedPage.goto('/');
+  await expect(
+    clearedPage.getByRole('link', { name: 'Instagram (yeni pəncərədə)', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    clearedPage.getByRole('link', { name: 'LinkedIn (yeni pəncərədə)', exact: true }),
+  ).toHaveCount(0);
+  await clearedPage.close();
   await nav(page, 'Kurslar və sillabus');
   await page.getByRole('button', { name: 'Kurs əlavə et', exact: true }).click();
   const title = `Linux laboratoriyası ${info.project.name}`;

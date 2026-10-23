@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { type CourseId } from './data';
 import { useContent } from './content';
+import SocialLinks from './SocialLinks';
 
 const pagesMode = import.meta.env.MODE === 'pages';
 const courseIcons: Record<string, typeof Headphones> = {
@@ -333,6 +334,7 @@ function Registration({
               </a>
             </div>
           </div>
+          <SocialLinks />
           <div className="registration-decoration" aria-hidden="true">
             <Code2 size={90} strokeWidth={1} />
             <span>hello, future IT pro_</span>
@@ -805,13 +807,10 @@ export default function App() {
             <p className="editable-copy">{settings.coursesDescription}</p>
           </div>
           <div className="course-grid">
-            {courses.map((course, index) => {
+            {courses.map((course) => {
               const Icon = courseIcons[course.icon] || Headphones;
               return (
-                <article
-                  key={course.id}
-                  className={`course-card ${index === 1 ? 'featured-course' : ''}`}
-                >
+                <article key={course.id} className="course-card">
                   <div className="course-card-top">
                     <span className="course-icon">
                       <Icon size={26} strokeWidth={1.6} />
@@ -1136,6 +1135,7 @@ export default function App() {
             <div>
               <Brand light />
               <p className="editable-copy">{settings.footerDescription}</p>
+              <SocialLinks />
             </div>
             <div className="footer-nav">
               <span>KƏŞF ET</span>
