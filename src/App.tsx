@@ -32,7 +32,8 @@ import { useContent } from './content';
 import SocialLinks from './SocialLinks';
 import InstructorGallery from './InstructorGallery';
 import SolutionVisual from './SolutionVisual';
-import { usePreferences, useLocalizedView, type Language } from './preferences';
+import LanguagePicker from './LanguagePicker';
+import { usePreferences, useLocalizedView } from './preferences';
 
 const pagesMode = import.meta.env.MODE === 'pages';
 const courseIcons: Record<string, typeof Headphones> = {
@@ -572,7 +573,7 @@ function Registration({
 
 export default function App() {
   const localize = useLocalizedView();
-  const { language, setLanguage, theme, toggleTheme, t } = usePreferences();
+  const { theme, toggleTheme, t } = usePreferences();
   const { courses, faqs: storedFaqs, settings } = useContent();
   const contact = { phone: settings.phone, display: settings.phoneDisplay };
   const visibility: Record<string, boolean> = {
@@ -696,18 +697,7 @@ export default function App() {
             </a>
           </nav>
           <div className="header-tools">
-            <label className="language-control">
-              <span className="sr-only">{t('Saytın dili')}</span>
-              <select
-                aria-label={t('Saytın dili')}
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as Language)}
-              >
-                <option value="az">🇦🇿 AZ</option>
-                <option value="en">🇬🇧 ENG</option>
-                <option value="ru">🇷🇺 RU</option>
-              </select>
-            </label>
+            <LanguagePicker />
             <button
               type="button"
               className="theme-toggle icon-button"
