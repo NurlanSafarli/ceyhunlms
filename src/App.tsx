@@ -33,6 +33,7 @@ import SocialLinks from './SocialLinks';
 import InstructorGallery from './InstructorGallery';
 import SolutionVisual from './SolutionVisual';
 import LanguagePicker from './LanguagePicker';
+import BrandMark from './BrandMark';
 import { usePreferences, useLocalizedView } from './preferences';
 
 const pagesMode = import.meta.env.MODE === 'pages';
@@ -55,7 +56,7 @@ function Brand({ light = false }: { light?: boolean }) {
         <img className="brand-image" src={settings.logoUrl} alt="" />
       ) : (
         <span className="brand-symbol">
-          <Code2 size={23} strokeWidth={2.5} />
+          <BrandMark />
         </span>
       )}
       <span className="brand-copy">
