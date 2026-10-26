@@ -1,7 +1,7 @@
 :root {
-  --action: #bf4900;
-  --action-hover: #9e3c00;
-  --action-ink: #fff;
+  --action: #fd6a02;
+  --action-hover: #fd6a02;
+  --action-ink: #15213a;
   --surface: #fff;
 }
 .brand-copy {
@@ -18,7 +18,7 @@
 }
 .brand-dot,
 .brand-tagline {
-  color: #c64d00;
+  color: #fd6a02;
 }
 .brand-tagline {
   font-family: 'Inter Variable', sans-serif;
@@ -318,8 +318,8 @@
   --accent: #9cbeff;
   --accent-hover: #bfd5ff;
   --accent-soft: #293d61;
-  --action: #ff9a45;
-  --action-hover: #ffb16e;
+  --action: #fd6a02;
+  --action-hover: #fd6a02;
   --action-ink: #251507;
 }
 [data-theme='dark'] body {
@@ -454,7 +454,7 @@
   color: var(--accent);
 }
 [data-theme='dark'] :is(.brand-dot, .brand-tagline) {
-  color: #ff9a45;
+  color: #fd6a02;
 }
 [data-theme='dark'] :is(.social-link, .social-link:hover) {
   background: #1d2a3e;
@@ -613,7 +613,7 @@
 }
 .brand-tagline,
 .brand-dot {
-  color: #b94700;
+  color: #fd6a02;
 }
 [data-theme='dark'] .lab-visual {
   --lime: #e6edff;
@@ -678,5 +678,48 @@
   .footer-nav a,
   .footer-nav button {
     overflow-wrap: anywhere;
+  }
+}
+
+/* Keep the menu centered between branding and the header controls. */
+@media (min-width: 1101px) {
+  .main-nav {
+    flex: 1;
+    justify-content: center;
+  }
+  .header-tools {
+    margin-left: 0;
+  }
+}
+.main-nav {
+  text-align: center;
+}
+.main-nav > a,
+.main-nav > a::after,
+.language-control,
+.language-control select {
+  animation: none;
+  transition: none;
+}
+.main-nav > a.active::after {
+  background: currentColor;
+  bottom: -7px;
+}
+.language-control::before,
+.language-control::after {
+  content: none;
+}
+.language-control select {
+  min-width: 84px;
+  box-shadow: none;
+  transform: none;
+}
+.language-control select:focus-visible {
+  outline: 2px solid #2563c5;
+  outline-offset: 2px;
+}
+@media (max-width: 1100px) {
+  .main-nav > a.active::after {
+    bottom: 0;
   }
 }

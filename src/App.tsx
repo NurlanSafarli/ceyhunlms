@@ -703,9 +703,9 @@ export default function App() {
                 value={language}
                 onChange={(event) => setLanguage(event.target.value as Language)}
               >
-                <option value="az">AZ</option>
-                <option value="en">ENG</option>
-                <option value="ru">RU</option>
+                <option value="az">🇦🇿 AZ</option>
+                <option value="en">🇬🇧 ENG</option>
+                <option value="ru">🇷🇺 RU</option>
               </select>
             </label>
             <button
