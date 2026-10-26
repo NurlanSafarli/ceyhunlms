@@ -13,9 +13,9 @@ test('Pages loads assets and syllabus under its repository subpath', async ({ pa
   await expect(page.getByRole('tabpanel')).toContainText('Windows Server və Active Directory');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /Sillabusu yüklə/ }).click();
-  expect((await downloadPromise).suggestedFilename()).toBe('jayhun-tech-system-admin-sillabus.txt');
+  expect((await downloadPromise).suggestedFilename()).toBe('jayhun-tech-system-admin-sillabus.pdf');
   expect(await page.locator('link[rel="icon"]').getAttribute('href')).toBe(
-    '/ceyhunlms/favicon.svg',
+    '/ceyhunlms/favicon.svg?v=jayhun-2',
   );
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),

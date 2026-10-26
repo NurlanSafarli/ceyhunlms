@@ -130,4 +130,4 @@ npm run test:pages
 
 Brauzer testlərindən əvvəl `npx playwright install chromium` işlədin. Cloud mühitdə mövcud `/usr/bin/chromium` üçün `CHROMIUM_PATH=/usr/bin/chromium` istifadə edilə bilər. API, bərpa və brauzer testləri ayrıca test bazaları ilə işləyir, real tələbə məlumatlarına toxunmur. `.env` parolları frontend-ə ötürülmür; şriftlər lokal paketlərdədir.
 
-`shared/default-content.json` yeni bazanın başlanğıc məzmunu və Pages-in statik məzmunudur. Gündəlik redaktələr admin paneldə edilir. Sillabuslar UTF-8 TXT kimi endirilir. Kurs cədvəlləri, bio və qiymətlər müəllim tərəfindən dəqiqləşdirilməlidir.
+`shared/default-content.json` yeni bazanın başlanğıc məzmunu və Pages-in statik məzmunudur. Gündəlik redaktələr admin paneldə edilir. Sillabuslar seçilən dilə uyğun, Azərbaycan və rus hərflərini dəstəkləyən şriftlə PDF kimi endirilir. PDF brauzerdə hazırlanır və GitHub Pages-də də işləyir. Kurs cədvəlləri, bio və qiymətlər müəllim tərəfindən dəqiqləşdirilməlidir.

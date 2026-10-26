@@ -1,3 +1,4 @@
+import { PDFDocument } from 'pdf-lib';
 import { test, expect } from '@playwright/test';
 
 test('home, navigation, contact details and responsive layout', async ({ page }, info) => {
@@ -41,12 +42,16 @@ test('all syllabus tabs, module details, keyboard navigation and download work',
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /Sillabusu yüklə/ }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('jayhun-tech-network-admin-sillabus.txt');
+  expect(download.suggestedFilename()).toBe('jayhun-tech-network-admin-sillabus.pdf');
   const stream = await download.createReadStream();
-  let content = '';
-  for await (const chunk of stream!) content += chunk.toString('utf8');
-  expect(content).toContain('VLAN');
-  expect(content).toContain('+994 51 301 95 25');
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  const bytes = Buffer.concat(chunks);
+  expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+  const pdf = await PDFDocument.load(bytes);
+  expect(pdf.getTitle()).toContain('Şəbəkə inzibatçılığı');
+  expect(pdf.getPageCount()).toBeGreaterThan(0);
+  await download.saveAs(test.info().outputPath('syllabus.pdf'));
   await page.getByRole('tab', { name: 'Şəbəkə inzibatçılığı' }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: 'Help Desk' })).toHaveAttribute(

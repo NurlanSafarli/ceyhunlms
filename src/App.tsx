@@ -615,25 +615,25 @@ export default function App() {
   function register(id: CourseId) {
     setSelectedCourse(id);
   }
-  function downloadSyllabus() {
-    if (!activeCourse) return;
-    const text =
-      `${settings.brandName.toUpperCase()} — ${t(activeCourse.name)}\n${t(activeCourse.duration)} · ${t(activeCourse.level)}\n\n${t('İlkin biliklər')}: ${t(activeCourse.prerequisites)}\n\n` +
-      activeCourse.modules
-        .map(
-          (m, i) =>
-            `${i + 1}. ${t(m.title)} (${t(m.duration)})\n${m.topics.map((topic) => `  • ${t(topic)}`).join('\n')}\n  ${t('Praktika')}: ${t(m.lab)}`,
-        )
-        .join('\n\n') +
-      `\n\n${t('Nəticə')}: ${t(activeCourse.outcome)}\n\n${t('Əlaqə')}: ${contact.display}\n${t('Qrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.')}`;
-    const url = URL.createObjectURL(
-      new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' }),
-    );
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `jayhun-tech-${activeCourse.id}-sillabus.txt`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+  async function downloadSyllabus() {
+    if (!activeCourse || pdfBusy) return;
+    setPdfBusy(true);
+    setPdfError('');
+    try {
+      const { downloadSyllabusPdf } = await import('./syllabusPdf');
+      await downloadSyllabusPdf({
+        course: activeCourse,
+        brand: settings.brandName,
+        phone: contact.display,
+        t,
+      });
+    } catch {
+      setPdfError(t('PDF hazırlanmadı. Yenidən cəhd edin.'));
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   return localize(
@@ -959,10 +959,17 @@ export default function App() {
                 </span>
                 <h2>{settings.syllabusTitle}</h2>
               </div>
-              <button className="button button-outline download-button" onClick={downloadSyllabus}>
-                <ArrowDownToLine size={17} /> Sillabusu yüklə <span>TXT</span>
+              <button
+                className="button button-outline download-button"
+                disabled={pdfBusy}
+                aria-busy={pdfBusy}
+                onClick={downloadSyllabus}
+              >
+                <ArrowDownToLine size={17} /> {pdfBusy ? 'PDF hazırlanır…' : 'Sillabusu yüklə'}{' '}
+                <span>PDF</span>
               </button>
             </div>
+            {pdfError && <p role="alert">{pdfError}</p>}
             <div className="syllabus-tabs" role="tablist" aria-label="Kurs sillabusları">
               {courses.map((course) => {
                 const Icon = courseIcons[course.icon] || Headphones;
