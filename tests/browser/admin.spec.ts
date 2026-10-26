@@ -318,6 +318,11 @@ test('logo upload appears in both brand locations and can be replaced or removed
   const publicPage = await page.context().newPage();
   await publicPage.goto('/');
   await expect(publicPage.locator('.brand-image')).toHaveCount(2);
+  await expect(publicPage.locator('.brand-wordmark')).toHaveCount(2);
+  await expect(publicPage.locator('.brand-tagline').first()).toHaveCSS('color', 'rgb(253, 106, 2)');
+  const logoSize = await publicPage.locator('.brand-image').first().boundingBox();
+  expect(logoSize!.width).toBeLessThanOrEqual(35);
+  expect(logoSize!.height).toBeLessThanOrEqual(36);
   for (const logo of await publicPage.locator('.brand-image').all()) {
     await expect(logo).toHaveAttribute('src', first!);
     expect(

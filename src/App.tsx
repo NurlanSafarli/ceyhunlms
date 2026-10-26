@@ -51,30 +51,28 @@ function Brand({ light = false }: { light?: boolean }) {
       href="#home"
       aria-label={`${settings.brandName} — ana səhifə`}
     >
-      {!settings.logoUrl && (
+      {settings.logoUrl ? (
+        <img className="brand-image" src={settings.logoUrl} alt="" />
+      ) : (
         <span className="brand-symbol">
           <Code2 size={23} strokeWidth={2.5} />
         </span>
       )}
       <span className="brand-copy">
-        {settings.logoUrl ? (
-          <img className="brand-image" src={settings.logoUrl} alt={settings.brandName} />
-        ) : (
-          <span className="brand-wordmark">
-            {/tech$/i.test(settings.brandName.trim()) ? (
-              <>
-                {settings.brandName
-                  .trim()
-                  .replace(/\s*tech$/i, '')
-                  .toLowerCase()}
-                <span className="brand-tech">tech</span>
-              </>
-            ) : (
-              settings.brandName
-            )}
-            <span className="brand-dot">.</span>
-          </span>
-        )}
+        <span className="brand-wordmark">
+          {/tech$/i.test(settings.brandName.trim()) ? (
+            <>
+              {settings.brandName
+                .trim()
+                .replace(/\s*tech$/i, '')
+                .toLowerCase()}
+              <span className="brand-tech">tech</span>
+            </>
+          ) : (
+            settings.brandName
+          )}
+          <span className="brand-dot">.</span>
+        </span>
         <span className="brand-tagline">INNOVATE | EDUCATE | INTEGRATE</span>
       </span>
     </a>,

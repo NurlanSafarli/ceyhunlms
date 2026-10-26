@@ -1,7 +1,7 @@
 :root {
-  --action: #fd6a02;
-  --action-hover: #fd6a02;
-  --action-ink: #15213a;
+  --action: #2f63d8;
+  --action-hover: #2f63d8;
+  --action-ink: #fff;
   --surface: #fff;
 }
 .brand-copy {
@@ -111,7 +111,7 @@
   color: var(--action-ink);
 }
 .button-dark {
-  box-shadow: 0 4px 14px #bf490019;
+  box-shadow: 0 4px 14px #2f63d819;
 }
 .course-register {
   border-color: var(--action);
@@ -198,8 +198,8 @@
   color: #2d63c7;
 }
 .solution-visual-systems {
-  background: #fff1e9;
-  color: #a54720;
+  background: #edf3ff;
+  color: #2f63d8;
 }
 .solution-visual-networks {
   background: #e9f7f4;
@@ -301,10 +301,10 @@
 @keyframes server-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 #c6752c00;
+    box-shadow: 0 0 0 0 #2f63d800;
   }
   50% {
-    box-shadow: 0 0 0 8px #c6752c15;
+    box-shadow: 0 0 0 8px #2f63d815;
   }
 }
 :root[data-theme='dark'] {
@@ -318,9 +318,9 @@
   --accent: #9cbeff;
   --accent-hover: #bfd5ff;
   --accent-soft: #293d61;
-  --action: #fd6a02;
-  --action-hover: #fd6a02;
-  --action-ink: #251507;
+  --action: #2f63d8;
+  --action-hover: #2f63d8;
+  --action-ink: #fff;
 }
 [data-theme='dark'] body {
   background: var(--canvas);
@@ -473,8 +473,8 @@
   color: #a7c7ff;
 }
 [data-theme='dark'] .solution-visual-systems {
-  background: #3b2a20;
-  color: #ffc298;
+  background: #223653;
+  color: #2f63d8;
 }
 [data-theme='dark'] .solution-visual-networks {
   background: #1e3934;
@@ -495,7 +495,7 @@
   background: var(--surface);
 }
 [data-theme='dark'] :is(a, button, input, textarea, select):focus-visible {
-  outline-color: #ffb16e;
+  outline-color: #2f63d8;
 }
 [data-theme='dark'] .registration-form-panel {
   background: var(--surface);
@@ -760,8 +760,8 @@
   animation: camera-pan 6s ease-in-out infinite;
 }
 .solution-visual-pos {
-  background: #fff3e8;
-  color: #a64a12;
+  background: #edf3ff;
+  color: #2f63d8;
 }
 .solution-visual-pos .solution-main-icon {
   animation: none;
@@ -827,8 +827,8 @@
   color: #b1c7ed;
 }
 [data-theme='dark'] .solution-visual-pos {
-  background: #3b2a20;
-  color: #ffc298;
+  background: #223653;
+  color: #2f63d8;
 }
 [data-theme='dark'] .solution-visual-custom {
   background: #322a45;
@@ -917,15 +917,21 @@
 
 .brand-image {
   display: block;
-  width: 190px;
-  height: 50px;
+  width: 35px;
+  height: 36px;
+  flex: 0 0 auto;
   object-fit: contain;
-  background: #fff;
-  border-radius: 4px;
+  background: transparent;
+  border-radius: 0;
 }
 @media (max-width: 600px) {
   .brand-image {
-    width: 175px;
-    height: 46px;
+    width: 30px;
+    height: 32px;
   }
+}
+
+.brand-dot,
+[data-theme='dark'] .brand-dot {
+  color: #2f63d8;
 }

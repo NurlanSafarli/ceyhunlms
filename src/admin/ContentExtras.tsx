@@ -286,7 +286,7 @@ export function LogoEditor({ settings, setSettings, request }: Props) {
       );
       setSettings((current) => ({ ...current, ...result }));
       setMessage(
-        file ? 'Loqo yükləndi və saytda yayımlandı.' : 'Loqo silindi. Brend adı göstəriləcək.',
+        file ? 'Loqo yükləndi və saytda yayımlandı.' : 'Loqo silindi. Standart ikon göstəriləcək.',
       );
     } catch (e) {
       setError((e as Error).message);
@@ -298,8 +298,9 @@ export function LogoEditor({ settings, setSettings, request }: Props) {
     <div className="ad-wide ad-instructor-upload">
       <h3>Saytın loqosu</h3>
       <p>
-        PNG, JPG və ya WebP, maksimum 5 MB. Şəffaf fonlu, üfüqi loqo tövsiyə olunur. Seçilən fayl
-        dərhal saxlanır və bu serverdəki saytın yuxarı və aşağı hissəsində görünür.
+        PNG, JPG və ya WebP, maksimum 5 MB. Şəffaf fonlu, kənar boşluqları olmayan loqo nişanı
+        tövsiyə olunur. Seçilən fayl dərhal saxlanır və header/footer-də kiçik ikonu əvəz edir.
+        Brend adı və narıncı şüar saxlanılır.
       </p>
       <div className="ad-photo-editor">
         {settings.logoUrl && (
@@ -310,7 +311,8 @@ export function LogoEditor({ settings, setSettings, request }: Props) {
               className="ad-btn ad-secondary"
               disabled={busy}
               onClick={() => {
-                if (window.confirm('Loqo silinsin? Brend adı yenidən göstəriləcək.')) void save();
+                if (window.confirm('Loqo silinsin? Standart ikon yenidən göstəriləcək.'))
+                  void save();
               }}
             >
               Loqonu sil
