@@ -73,8 +73,17 @@ export function readContent(db, publishedOnly = true) {
     ...defaults.settings,
     ...JSON.parse(db.prepare('SELECT data FROM site_settings WHERE id=1').get().data),
   };
-  const photo = db.prepare("SELECT version FROM public_images WHERE id='instructor'").get();
-  settings.instructorPhotoUrl = photo ? `/api/public/instructor-photo?v=${photo.version}` : '';
+  settings.instructorPhotos = db
+    .prepare('SELECT id,version FROM public_images ORDER BY rowid')
+    .all()
+    .map((photo) => ({
+      id: photo.id,
+      url:
+        photo.id === 'instructor'
+          ? `/api/public/instructor-photo?v=${photo.version}`
+          : `/api/public/instructor-photos/${photo.id}?v=${photo.version}`,
+    }));
+  settings.instructorPhotoUrl = settings.instructorPhotos[0]?.url || '';
   if (publishedOnly) settings.solutions = settings.solutions.filter((item) => item.published);
   const where = publishedOnly ? ' WHERE published=1' : '';
   const courses = db

@@ -1,4 +1,5 @@
 import { Instagram } from 'lucide-react';
+import { usePreferences } from './preferences';
 import { useContent } from './content';
 
 type BrandIconProps = { size?: number; 'aria-hidden'?: string | boolean };
@@ -35,6 +36,7 @@ function LinkedInIcon({ size = 22 }: BrandIconProps) {
 
 export default function SocialLinks() {
   const { settings } = useContent();
+  const { t } = usePreferences();
   const links = [
     { name: 'WhatsApp', href: settings.whatsappUrl, Icon: WhatsAppIcon, style: 'whatsapp' },
     { name: 'LinkedIn', href: settings.linkedinUrl, Icon: LinkedInIcon, style: 'linkedin' },
@@ -49,7 +51,7 @@ export default function SocialLinks() {
   });
   if (!links.length) return null;
   return (
-    <div className="social-links" role="group" aria-label="Sosial şəbəkələr">
+    <div className="social-links" role="group" aria-label={t('Sosial şəbəkələr')}>
       {links.map(({ name, href, Icon, style }) => (
         <a
           key={name}
@@ -57,7 +59,7 @@ export default function SocialLinks() {
           className={`social-link social-${style}`}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`${name} (yeni pəncərədə)`}
+          aria-label={`${name} (${t('yeni pəncərədə')})`}
           title={name}
         >
           <Icon size={22} aria-hidden="true" />

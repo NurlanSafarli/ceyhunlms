@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom/client';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/manrope';
 import './styles.css';
+import './appearance.css';
 import App from './App';
+import { PreferencesProvider } from './preferences';
 import { ContentProvider } from './content';
 const Admin = lazy(() => import('./admin/Admin'));
 const PagesAdmin = lazy(() => import('./admin/PagesAdmin'));
@@ -17,9 +19,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         {import.meta.env.MODE === 'pages' ? <PagesAdmin /> : <Admin />}
       </Suspense>
     ) : (
-      <ContentProvider>
-        <App />
-      </ContentProvider>
+      <PreferencesProvider>
+        <ContentProvider>
+          <App />
+        </ContentProvider>
+      </PreferencesProvider>
     )}
   </React.StrictMode>,
 );

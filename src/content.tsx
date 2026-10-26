@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { usePreferences } from './preferences';
 import { courses, faqs, settings, type Course, type Faq, type Settings } from './data';
 
 type Content = { courses: Course[]; faqs: Faq[]; settings: Settings };
 const fallback: Content = { courses, faqs, settings };
 const Context = createContext(fallback);
 export function ContentProvider({ children }: { children: ReactNode }) {
+  const { t, language } = usePreferences();
   const [content, setContent] = useState(fallback);
   useEffect(() => {
     if (import.meta.env.MODE === 'pages') return;
@@ -22,11 +24,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, []);
   useEffect(() => {
-    document.title = `${content.settings.brandName} — IT karyerana ilk addım`;
+    document.title = `${content.settings.brandName} — ${t('IT karyerana ilk addım')}`;
     document
       .querySelector('meta[name="description"]')
-      ?.setAttribute('content', content.settings.heroDescription);
-  }, [content.settings]);
+      ?.setAttribute('content', t(content.settings.heroDescription));
+  }, [content.settings, language]);
   return <Context.Provider value={content}>{children}</Context.Provider>;
 }
 export const useContent = () => useContext(Context);

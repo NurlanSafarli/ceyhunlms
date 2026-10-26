@@ -17,7 +17,9 @@ export type Course = {
   sort_order: number;
   modules: { title: string; duration: string; topics: string[]; lab: string }[];
 };
-export type Settings = typeof defaults.settings;
+export type Settings = typeof defaults.settings & {
+  instructorPhotos: { id: string; url: string }[];
+};
 export type Faq = {
   id: string;
   question: string;
@@ -27,4 +29,4 @@ export type Faq = {
 };
 export const courses: Course[] = defaults.courses;
 export const faqs: Faq[] = defaults.faqs;
-export const settings: Settings = defaults.settings;
+export const settings: Settings = { ...defaults.settings, instructorPhotos: [] };

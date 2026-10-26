@@ -11,71 +11,101 @@ export function InstructorPhotoEditor({ settings, setSettings, request }: Props)
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  async function photo(file: File | null) {
+  async function upload(files: File[]) {
     setError('');
     setMessage('');
     if (
-      file &&
-      (file.size > 5 * 1024 * 1024 ||
-        !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+      files.some(
+        (file) =>
+          file.size > 5 * 1024 * 1024 ||
+          !['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
+      )
     ) {
-      setError('JPG, PNG və ya WebP seçin. Maksimum həcm: 5 MB.');
+      setError('JPG, PNG və ya WebP seçin. Hər şəkil maksimum 5 MB ola bilər.');
+      return;
+    }
+    if ((settings.instructorPhotos?.length || 0) + files.length > 8) {
+      setError('Ən çox 8 şəkil əlavə edə bilərsiniz.');
       return;
     }
     setBusy(true);
+    let uploaded = 0;
     try {
-      const result = await request(
-        '/instructor-photo',
-        file
-          ? {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/octet-stream' },
-              body: file,
-            }
-          : { method: 'DELETE' },
-      );
-      setSettings((current) => ({ ...current, instructorPhotoUrl: result.instructorPhotoUrl }));
-      setMessage(file ? 'Şəkil yükləndi və saytda yayımlandı.' : 'Şəkil silindi.');
+      for (const file of files) {
+        const result = await request('/instructor-photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: file,
+        });
+        setSettings((current) => ({ ...current, ...result }));
+        uploaded++;
+      }
+      setMessage('Şəkil yükləndi və saytda yayımlandı.');
+    } catch (e) {
+      setError(`${uploaded ? `${uploaded} şəkil yükləndi. ` : ''}${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function removePhoto(id: string) {
+    if (!window.confirm('Bu şəkil silinsin?')) return;
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await request(`/instructor-photos/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      setSettings((current) => ({ ...current, ...result }));
+      setMessage('Şəkil silindi.');
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
+
   return (
     <div className="ad-wide ad-instructor-upload">
       <h3>Müəllimin şəkli</h3>
-      <p>JPG, PNG və ya WebP, maksimum 5 MB. Şəkil seçilən kimi yüklənir və saytda görünür.</p>
+      <p>
+        Bir neçə şəkil seçə bilərsiniz: maksimum 8 şəkil, hər biri 5 MB. JPG, PNG və WebP. Şəkillər
+        seçilən kimi yüklənir və saytda görünür.
+      </p>
       <div className="ad-photo-editor">
-        {settings.instructorPhotoUrl && (
-          <img src={settings.instructorPhotoUrl} alt="Müəllimin şəkli — önbaxış" />
-        )}
+        <div className="ad-photo-list">
+          {(settings.instructorPhotos || []).map((photo: Row, index: number) => (
+            <div key={photo.id}>
+              <img src={photo.url} alt={`Müəllimin şəkli ${index + 1} — önbaxış`} />
+              <button
+                type="button"
+                className="ad-btn ad-secondary"
+                disabled={busy}
+                onClick={() => void removePhoto(photo.id)}
+                aria-label={
+                  settings.instructorPhotos.length === 1 ? 'Şəkli sil' : `Şəkil ${index + 1} sil`
+                }
+              >
+                Şəkli sil
+              </button>
+            </div>
+          ))}
+        </div>
         <label className="ad-field" htmlFor="instructor-photo">
-          Şəkil əlavə et və ya dəyiş
+          Şəkillər əlavə et
         </label>
         <input
           id="instructor-photo"
           type="file"
+          multiple
           accept="image/jpeg,image/png,image/webp"
           disabled={busy}
           onChange={(e) => {
-            const file = e.target.files?.[0];
+            const files = Array.from(e.target.files || []);
             e.target.value = '';
-            if (file) void photo(file);
+            if (files.length) void upload(files);
           }}
         />
-        {settings.instructorPhotoUrl && (
-          <button
-            type="button"
-            className="ad-btn ad-secondary"
-            disabled={busy}
-            onClick={() => {
-              if (window.confirm('Müəllimin şəkli silinsin?')) void photo(null);
-            }}
-          >
-            Şəkli sil
-          </button>
-        )}
         {busy && <p role="status">Şəkil işlənir…</p>}
         {message && <p role="status">{message}</p>}
         {error && (
@@ -151,6 +181,29 @@ export default function ContentExtras({ settings, setSettings }: Props) {
                 onChange={(e) => change(index, 'description', e.target.value)}
               />
             </label>
+            <div className="ad-field">
+              <label htmlFor={`solution-visual-${item.id}`}>Animasiya növü</label>
+              <select
+                id={`solution-visual-${item.id}`}
+                value={
+                  item.visual ||
+                  (
+                    { support: 'support', systems: 'systems', networks: 'networks' } as Record<
+                      string,
+                      string
+                    >
+                  )[item.id] ||
+                  'support'
+                }
+                onChange={(e) => change(index, 'visual', e.target.value)}
+              >
+                <option value="support">Texniki dəstək</option>
+                <option value="systems">Server və sistem</option>
+                <option value="networks">Şəbəkə / Wi-Fi</option>
+                <option value="cloud">Bulud</option>
+                <option value="security">Təhlükəsizlik</option>
+              </select>
+            </div>
             <label className="ad-checkbox">
               <input
                 type="checkbox"
@@ -183,7 +236,13 @@ export default function ContentExtras({ settings, setSettings }: Props) {
               ...s,
               solutions: [
                 ...(s.solutions || []),
-                { id: crypto.randomUUID(), title: '', description: '', published: true },
+                {
+                  id: crypto.randomUUID(),
+                  title: '',
+                  description: '',
+                  published: true,
+                  visual: 'support',
+                },
               ],
             }))
           }

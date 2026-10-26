@@ -14,6 +14,8 @@ import {
   Headphones,
   Layers3,
   Menu,
+  Moon,
+  Sun,
   MessageCircle,
   Network,
   Play,
@@ -28,6 +30,9 @@ import {
 import { type CourseId } from './data';
 import { useContent } from './content';
 import SocialLinks from './SocialLinks';
+import InstructorGallery from './InstructorGallery';
+import SolutionVisual from './SolutionVisual';
+import { usePreferences, useLocalizedView, type Language } from './preferences';
 
 const pagesMode = import.meta.env.MODE === 'pages';
 const courseIcons: Record<string, typeof Headphones> = {
@@ -37,8 +42,9 @@ const courseIcons: Record<string, typeof Headphones> = {
 };
 
 function Brand({ light = false }: { light?: boolean }) {
+  const localize = useLocalizedView();
   const { settings } = useContent();
-  return (
+  return localize(
     <a
       className={`brand ${light ? 'brand-light' : ''}`}
       href="#home"
@@ -47,16 +53,30 @@ function Brand({ light = false }: { light?: boolean }) {
       <span className="brand-symbol">
         <Code2 size={23} strokeWidth={2.5} />
       </span>
-      <span>
-        {settings.brandName}
-        <span className="brand-dot">.</span>
+      <span className="brand-copy">
+        <span className="brand-wordmark">
+          {/tech$/i.test(settings.brandName.trim()) ? (
+            <>
+              {settings.brandName
+                .trim()
+                .replace(/\s*tech$/i, '')
+                .toLowerCase()}
+              <span className="brand-tech">tech</span>
+            </>
+          ) : (
+            settings.brandName
+          )}
+          <span className="brand-dot">.</span>
+        </span>
+        <span className="brand-tagline">INNOVATE | EDUCATE | INTEGRATE</span>
       </span>
-    </a>
+    </a>,
   );
 }
 
 function LabVisual() {
-  return (
+  const localize = useLocalizedView();
+  return localize(
     <div
       className="lab-visual"
       role="img"
@@ -164,11 +184,12 @@ function LabVisual() {
         <ArrowUpRight size={23} />
       </div>
       <span className="lab-coordinates">40.4093° N &nbsp; 49.8671° E</span>
-    </div>
+    </div>,
   );
 }
 
 function PrivacyDialog({ onClose }: { onClose: () => void }) {
+  const localize = useLocalizedView();
   const { settings } = useContent();
   const contact = { phone: settings.phone, display: settings.phoneDisplay };
   const ref = useRef<HTMLDialogElement>(null);
@@ -176,7 +197,7 @@ function PrivacyDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     ref.current?.showModal();
   }, []);
-  return (
+  return localize(
     <dialog
       className="privacy-dialog"
       ref={ref}
@@ -208,7 +229,7 @@ function PrivacyDialog({ onClose }: { onClose: () => void }) {
       <button className="button button-dark" onClick={onClose}>
         Aydındır <Check size={16} />
       </button>
-    </dialog>
+    </dialog>,
   );
 }
 
@@ -221,6 +242,7 @@ function Registration({
   onCourseChange: (id: string) => void;
   onPrivacy: () => void;
 }) {
+  const localize = useLocalizedView();
   const { courses, settings } = useContent();
   const contact = { phone: settings.phone, display: settings.phoneDisplay };
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -300,7 +322,7 @@ function Registration({
     }
   }
 
-  return (
+  return localize(
     <section className="registration-section" id="register" hidden={!settings.showRegistration}>
       <div className="section-container registration-layout">
         <div className="registration-copy">
@@ -544,11 +566,13 @@ function Registration({
           )}
         </div>
       </div>
-    </section>
+    </section>,
   );
 }
 
 export default function App() {
+  const localize = useLocalizedView();
+  const { language, setLanguage, theme, toggleTheme, t } = usePreferences();
   const { courses, faqs: storedFaqs, settings } = useContent();
   const contact = { phone: settings.phone, display: settings.phoneDisplay };
   const visibility: Record<string, boolean> = {
@@ -613,14 +637,14 @@ export default function App() {
   function downloadSyllabus() {
     if (!activeCourse) return;
     const text =
-      `${settings.brandName.toUpperCase()} — ${activeCourse.name}\n${activeCourse.duration} · ${activeCourse.level}\n\nİlkin biliklər: ${activeCourse.prerequisites}\n\n` +
+      `${settings.brandName.toUpperCase()} — ${t(activeCourse.name)}\n${t(activeCourse.duration)} · ${t(activeCourse.level)}\n\n${t('İlkin biliklər')}: ${t(activeCourse.prerequisites)}\n\n` +
       activeCourse.modules
         .map(
           (m, i) =>
-            `${i + 1}. ${m.title} (${m.duration})\n${m.topics.map((t) => `  • ${t}`).join('\n')}\n  Praktika: ${m.lab}`,
+            `${i + 1}. ${t(m.title)} (${t(m.duration)})\n${m.topics.map((topic) => `  • ${t(topic)}`).join('\n')}\n  ${t('Praktika')}: ${t(m.lab)}`,
         )
         .join('\n\n') +
-      `\n\nNəticə: ${activeCourse.outcome}\n\nƏlaqə: ${contact.display}\nQrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.`;
+      `\n\n${t('Nəticə')}: ${t(activeCourse.outcome)}\n\n${t('Əlaqə')}: ${contact.display}\n${t('Qrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.')}`;
     const url = URL.createObjectURL(
       new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' }),
     );
@@ -631,7 +655,7 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  return (
+  return localize(
     <>
       <a className="skip-link" href="#main">
         Məzmuna keç
@@ -671,6 +695,29 @@ export default function App() {
               Qeydiyyatdan keç <ArrowUpRight size={16} />
             </a>
           </nav>
+          <div className="header-tools">
+            <label className="language-control">
+              <span className="sr-only">{t('Saytın dili')}</span>
+              <select
+                aria-label={t('Saytın dili')}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+              >
+                <option value="az">AZ</option>
+                <option value="en">ENG</option>
+                <option value="ru">RU</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="theme-toggle icon-button"
+              onClick={toggleTheme}
+              aria-label={t(theme === 'light' ? 'Tünd rejimə keç' : 'Açıq rejimə keç')}
+              aria-pressed={theme === 'dark'}
+            >
+              {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
+            </button>
+          </div>
           <a
             href="#register"
             hidden={!settings.showRegistration}
@@ -878,16 +925,10 @@ export default function App() {
         <section className="about-section" id="about" hidden={!settings.showAbout}>
           <div className="section-container about-layout">
             <div className="about-art">
-              <div className="about-art-header">
-                <span>BEHIND THE SCREENS</span>
-                <ArrowUpRight size={18} />
-              </div>
-              {settings.instructorPhotoUrl ? (
-                <img
-                  className="instructor-photo"
-                  src={settings.instructorPhotoUrl}
-                  alt={settings.instructorName}
-                  loading="lazy"
+              {settings.instructorPhotos?.length ? (
+                <InstructorGallery
+                  photos={settings.instructorPhotos}
+                  name={settings.instructorName}
                 />
               ) : (
                 <div className="about-monogram">
@@ -902,7 +943,6 @@ export default function App() {
                   <h3>{settings.instructorName}</h3>
                   <span>{settings.instructorRole}</span>
                 </div>
-                <span className="about-signature">J.</span>
               </div>
               <div className="about-art-tag">
                 <span className="live-dot" /> Biliyi paylaş, gələcəyi qur.
@@ -1085,6 +1125,17 @@ export default function App() {
               .filter((item) => item.published)
               .map((item, index) => (
                 <article className="solution-card" key={item.id}>
+                  <SolutionVisual
+                    kind={
+                      item.visual ||
+                      (
+                        { support: 'support', systems: 'systems', networks: 'networks' } as Record<
+                          string,
+                          string
+                        >
+                      )[item.id]
+                    }
+                  />
                   <span className="solution-number">{String(index + 1).padStart(2, '0')}</span>
                   <h3>{item.title}</h3>
                   <p className="editable-copy">{item.description}</p>
@@ -1224,6 +1275,6 @@ export default function App() {
         </div>
       </footer>
       {privacyOpen && <PrivacyDialog onClose={() => setPrivacyOpen(false)} />}
-    </>
+    </>,
   );
 }

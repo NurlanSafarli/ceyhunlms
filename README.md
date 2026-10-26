@@ -86,9 +86,13 @@ ZIP-dən istifadə edirsinizsə `.local` və `.env` fayllarını qoruyun, yeni k
 
 Sosial linklər üçün **Sayt məzmunu → Sosial şəbəkələr** bölməsində WhatsApp, LinkedIn və Instagram ünvanlarını `https://` ilə daxil edib **Məzmunu yadda saxla** düyməsinə basın. Linklər saytın əlaqə və alt hissələrində görünür. İkonu gizlətmək üçün linki silib yadda saxlayın. WhatsApp əvvəlcədən müəllimin təsdiqlənmiş nömrəsinə qoşulub; digər profillər daxil edilənədək gizlidir. Lokal paneldəki dəyişikliklər lokal sayta aiddir; GitHub Pages üçün statik linklər `shared/default-content.json` faylında saxlanılır.
 
-**Müəllim şəkli:** **Sayt məzmunu → Müəllim haqqında → Müəllimin şəkli** bölməsindən JPG, PNG və ya WebP yükləyin (maksimum 5 MB / 25 meqapiksel). Şəkil dərhal yayımlanır; dəyişmək və silmək mümkündür. Server şəkli ölçüləndirib WebP formatına çevirir və metadatanı silir. Şəkil SQLite bazasında saxlanılır və ehtiyat nüsxəyə daxildir.
+**Müəllim qalereyası:** **Sayt məzmunu → Müəllim haqqında → Müəllimin şəkli** bölməsindən Bir və ya bir neçə JPG, PNG və ya WebP seçin (cəmi maksimum 8 şəkil, hər biri 5 MB / 25 meqapiksel). Əvvəlki şəkil saxlanılır, yenilər qalereyaya əlavə edilir. Şəkillər dərhal yayımlanır və ayrı-ayrılıqda silinə bilər. Saytda qalereyanı sürüşdürməklə, ox düymələri və klaviaturanın sağ/sol oxları ilə idarə etmək olur. Server şəkli ölçüləndirib WebP formatına çevirir və metadatanı silir. Şəkil SQLite bazasında saxlanılır və ehtiyat nüsxəyə daxildir.
 
 **IT həllər:** **Sayt məzmunu → IT həllər** bölməsində başlığı, izahı və xidmətləri dəyişin. **IT həlli əlavə et** ilə yeni xidmət yaradın; ayrıca xidməti və ya bütün bölməni gizlədə, xidməti silə bilərsiniz. Sonda **Məzmunu yadda saxla** düyməsinə basın. Yayımlanmış xidmətlər varsa, header-də **IT həllər** keçidi görünür. İlkin mətnlər texniki dəstək, server və şəbəkə xidmətləri üçün redaktə edilə bilən şablonlardır.
+
+**Animasiya seçimi:** IT həllər redaktorunda hər xidmətin **Animasiya növü** sahəsindən texniki dəstək, server, şəbəkə, bulud və ya təhlükəsizlik görünüşünü seçin. Cihazın “hərəkəti azalt” seçimi animasiyaları dayandırır.
+
+**Dillər və görünüş:** Saytın header-ində AZ / ENG / RU seçimi və açıq/tünd rejim düyməsi var. Seçimlər həmin brauzerdə yadda saxlanır. Hazır interfeys, ilkin sayt məzmunu və sillabuslar tərcümə olunub. Tərcümələr `src/locales/en.json` və `src/locales/ru.json` fayllarında Azərbaycan dilindəki mətnə uyğun saxlanılır; admin panelində tamamilə yeni mətn yazıldıqda onun tərcüməsi də bu fayllara əlavə edilməlidir. Tərcüməsi olmayan mətn orijinal dildə göstərilir. Admin paneli Azərbaycan dilində qalır.
 
 ## Admin paneli serverə yerləşdirmək
 

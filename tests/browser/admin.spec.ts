@@ -194,7 +194,7 @@ test('teacher photo and IT solution settings publish and can be removed', async 
     .png()
     .toBuffer();
   await page
-    .getByLabel('Şəkil əlavə et və ya dəyiş', { exact: true })
+    .getByLabel('Şəkillər əlavə et', { exact: true })
     .setInputFiles({ name: 'portrait.png', mimeType: 'image/png', buffer: image });
   await expect(page.getByRole('status')).toContainText('Şəkil yükləndi');
   await page.getByRole('button', { name: 'IT həlli əlavə et', exact: true }).click();
@@ -204,12 +204,19 @@ test('teacher photo and IT solution settings publish and can be removed', async 
   await fieldset
     .getByLabel('Xidmətin təsviri', { exact: true })
     .fill('Bulud sistemlərinin sazlanması.');
+  await fieldset.getByLabel('Animasiya növü', { exact: true }).selectOption('cloud');
   await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
   await expect(page.locator('.ad-toast')).toContainText('Sayt məzmunu yeniləndi');
   const publicPage = await page.context().newPage();
   await publicPage.goto('/');
   await expect(
     publicPage.locator('#solutions').getByRole('heading', { name: title }),
+  ).toBeVisible();
+  await expect(
+    publicPage
+      .locator('.solution-card')
+      .filter({ hasText: title })
+      .locator('.solution-visual-cloud'),
   ).toBeVisible();
   await expect(publicPage.locator('.instructor-photo')).toBeVisible();
   await publicPage.locator('.instructor-photo').scrollIntoViewIfNeeded();
@@ -243,4 +250,48 @@ test('teacher photo and IT solution settings publish and can be removed', async 
   await expect(publicPage.locator('.instructor-photo')).toHaveCount(0);
   await expect(publicPage.locator('#solutions')).not.toContainText(title);
   await publicPage.close();
+});
+
+test('instructor gallery accepts multiple photos and supports keyboard scrolling', async ({
+  page,
+}) => {
+  await login(page);
+  await nav(page, 'Sayt məzmunu');
+  const first = await sharp({
+    create: { width: 160, height: 200, channels: 3, background: '#a8caec' },
+  })
+    .png()
+    .toBuffer();
+  const second = await sharp({
+    create: { width: 160, height: 200, channels: 3, background: '#f0c5a3' },
+  })
+    .png()
+    .toBuffer();
+  await page.getByLabel('Şəkillər əlavə et', { exact: true }).setInputFiles([
+    { name: 'first.png', mimeType: 'image/png', buffer: first },
+    { name: 'second.png', mimeType: 'image/png', buffer: second },
+  ]);
+  await expect(page.locator('.ad-photo-list img')).toHaveCount(2);
+  await expect(
+    page.getByText('Şəkil yükləndi və saytda yayımlandı.', { exact: true }),
+  ).toBeVisible();
+  const preview = await page.context().newPage();
+  await preview.goto('/');
+  await expect(preview.locator('.instructor-photo')).toHaveCount(2);
+  await preview.locator('.gallery-track').scrollIntoViewIfNeeded();
+  await preview.getByRole('button', { name: 'Növbəti şəkil', exact: true }).click();
+  await expect(preview.locator('.gallery-controls')).toContainText('2 / 2');
+  await preview.locator('.gallery-track').focus();
+  await preview.keyboard.press('ArrowLeft');
+  await expect(preview.locator('.gallery-controls')).toContainText('1 / 2');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Şəkil 1 sil', exact: true }).click();
+  await expect(page.locator('.ad-photo-list img')).toHaveCount(1);
+  await preview.reload();
+  await expect(preview.locator('.instructor-photo')).toHaveCount(1);
+  await expect(preview.locator('.gallery-controls')).toHaveCount(0);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Şəkli sil', exact: true }).click();
+  await expect(page.locator('.ad-photo-list img')).toHaveCount(0);
+  await preview.close();
 });

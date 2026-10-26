@@ -632,6 +632,46 @@ test('IT solutions can be created, edited, hidden and deleted without reseeding'
   reopened.close();
 });
 
+test('photo gallery preserves existing images, enforces limits and survives backup', async () => {
+  const image = await sharp({
+    create: { width: 40, height: 50, channels: 3, background: '#dceaff' },
+  })
+    .png()
+    .toBuffer();
+  const upload = (raw = image, auth = true) =>
+    call('/api/admin/instructor-photos', {
+      method: 'POST',
+      raw,
+      auth,
+      headers: { 'Content-Type': 'application/octet-stream' },
+    });
+  assert.equal((await upload(image, false)).status, 401);
+  await call('/api/admin/instructor-photo', {
+    method: 'PUT',
+    raw: image,
+    headers: { 'Content-Type': 'application/octet-stream' },
+  });
+  for (let i = 0; i < 7; i++) assert.equal((await upload()).status, 201);
+  const photos = (await call('/api/admin/settings')).data.instructorPhotos;
+  assert.equal(photos.length, 8);
+  assert.equal(photos[0].id, 'instructor');
+  assert.equal((await upload()).status, 400);
+  const snapshot = join(dir, 'gallery.sqlite');
+  transferDatabase(dbPath, snapshot);
+  const copy = openDatabase(snapshot);
+  assert.equal(copy.prepare('SELECT COUNT(*) n FROM public_images').get().n, 8);
+  copy.close();
+  for (const photo of photos) {
+    assert.equal((await fetch(base + photo.url)).status, 200);
+    assert.equal(
+      (await call(`/api/admin/instructor-photos/${photo.id}`, { method: 'DELETE' })).status,
+      200,
+    );
+  }
+  assert.equal((await upload(Buffer.from('invalid'))).status, 400);
+  assert.deepEqual((await call('/api/admin/settings')).data.instructorPhotos, []);
+});
+
 test('logout immediately revokes the server-side session', async () => {
   assert.equal((await call('/api/admin/logout', { method: 'POST' })).status, 200);
   assert.equal((await call('/api/admin/session')).status, 401);

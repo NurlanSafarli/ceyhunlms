@@ -70,6 +70,24 @@ export const courseRow = (r) => ({
 export const csvValue = (value) =>
   `"${(/^[\s]*[=+\-@]/.test(String(value ?? '')) || /^[\t\r\n]/.test(String(value ?? '')) ? "'" : '') + String(value ?? '').replaceAll('"', '""')}"`;
 
+async function preparePhoto(buffer) {
+  let image;
+  try {
+    const input = sharp(buffer, { limitInputPixels: 25000000, failOn: 'warning' });
+    const metadata = await input.metadata();
+    if (!['jpeg', 'png', 'webp'].includes(metadata.format) || (metadata.pages || 1) > 1)
+      fail('Yalnız statik JPG, PNG və WebP şəkilləri qəbul olunur.');
+    image = await input
+      .rotate()
+      .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch {
+    fail('Şəkil oxunmadı. Etibarlı JPG, PNG və ya WebP seçin (maksimum 25 meqapiksel).');
+  }
+  return image;
+}
+
 export function installAdmin(app, db) {
   const exists = (table, id, label) => {
     const row = db.prepare(`SELECT * FROM ${table} WHERE id=?`).get(id);
@@ -159,20 +177,12 @@ export function installAdmin(app, db) {
     express.raw({ type: 'application/octet-stream', limit: '5mb' }),
     async (req, res) => {
       if (!Buffer.isBuffer(req.body) || !req.body.length) fail('Şəkil faylı tələb olunur.');
-      let image;
-      try {
-        const input = sharp(req.body, { limitInputPixels: 25000000, failOn: 'warning' });
-        const metadata = await input.metadata();
-        if (!['jpeg', 'png', 'webp'].includes(metadata.format) || (metadata.pages || 1) > 1)
-          fail('Yalnız statik JPG, PNG və WebP şəkilləri qəbul olunur.');
-        image = await input
-          .rotate()
-          .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
-          .webp({ quality: 85 })
-          .toBuffer();
-      } catch {
-        fail('Şəkil oxunmadı. Etibarlı JPG, PNG və ya WebP seçin (maksimum 25 meqapiksel).');
-      }
+      const image = await preparePhoto(req.body);
+      if (
+        !db.prepare("SELECT 1 FROM public_images WHERE id='instructor'").get() &&
+        db.prepare('SELECT COUNT(*) n FROM public_images').get().n >= 8
+      )
+        fail('Ən çox 8 şəkil əlavə edə bilərsiniz.');
       const version = randomUUID();
       db.prepare(
         "INSERT INTO public_images VALUES ('instructor',?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,version=excluded.version",
@@ -185,12 +195,41 @@ export function installAdmin(app, db) {
     res.json({ instructorPhotoUrl: '' });
   });
 
+  app.get('/api/public/instructor-photos/:id', (req, res) => {
+    const image = db.prepare('SELECT data FROM public_images WHERE id=?').get(req.params.id);
+    if (!image) return res.status(404).json({ error: 'Şəkil tapılmadı.' });
+    res.type('image/webp').send(Buffer.from(image.data));
+  });
+  app.post(
+    '/api/admin/instructor-photos',
+    express.raw({ type: 'application/octet-stream', limit: '5mb' }),
+    async (req, res) => {
+      if (!Buffer.isBuffer(req.body) || !req.body.length) fail('Şəkil faylı tələb olunur.');
+      if (db.prepare('SELECT COUNT(*) n FROM public_images').get().n >= 8)
+        fail('Ən çox 8 şəkil əlavə edə bilərsiniz.');
+      const image = await preparePhoto(req.body);
+      if (db.prepare('SELECT COUNT(*) n FROM public_images').get().n >= 8)
+        fail('Ən çox 8 şəkil əlavə edə bilərsiniz.');
+      const id = randomUUID(),
+        version = randomUUID();
+      db.prepare('INSERT INTO public_images VALUES (?,?,?)').run(id, image, version);
+      const { instructorPhotos, instructorPhotoUrl } = readContent(db, false).settings;
+      res.status(201).json({ instructorPhotos, instructorPhotoUrl });
+    },
+  );
+  app.delete('/api/admin/instructor-photos/:id', (req, res) => {
+    const result = db.prepare('DELETE FROM public_images WHERE id=?').run(req.params.id);
+    if (!result.changes) fail('Şəkil tapılmadı.', 404);
+    const { instructorPhotos, instructorPhotoUrl } = readContent(db, false).settings;
+    res.json({ instructorPhotos, instructorPhotoUrl });
+  });
+
   app.get('/api/admin/settings', (_req, res) => res.json(readContent(db, false).settings));
   app.put('/api/admin/settings', (req, res) => {
     const b = body(req),
       current = readContent(db, false).settings;
     for (const [key, value] of Object.entries(b)) {
-      if (key === 'instructorPhotoUrl') continue; // Derived from the separately uploaded image.
+      if (key === 'instructorPhotoUrl' || key === 'instructorPhotos') continue; // Derived from the separately uploaded image.
       if (key === 'solutions') {
         if (!Array.isArray(value) || value.length > 12) fail('Ən çox 12 IT həlli əlavə edin.');
         const ids = new Set();
@@ -203,6 +242,9 @@ export function installAdmin(app, db) {
           ids.add(id);
           return {
             id,
+            visual: item.visual
+              ? choice(item, 'visual', ['support', 'systems', 'networks', 'cloud', 'security'])
+              : { support: 'support', systems: 'systems', networks: 'networks' }[id] || 'support',
             title: text(item, 'title', 120, true),
             description: text(item, 'description', 1500, true),
             published: !!bool(item, 'published'),
