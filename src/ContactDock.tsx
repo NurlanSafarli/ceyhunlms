@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Phone, MessageCircle, X } from 'lucide-react';
 import SocialLinks from './SocialLinks';
 import { useContent } from './content';
@@ -8,6 +8,28 @@ export default function ContactDock() {
   const { settings } = useContent();
   const { t } = usePreferences();
   const [open, setOpen] = useState(() => window.matchMedia('(min-width: 761px)').matches);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const courses = document.getElementById('courses');
+      setVisible(!!courses && courses.getBoundingClientRect().top <= window.innerHeight / 2);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [settings.showCourses]);
+  if (!visible) return null;
+
   return (
     <aside className={`contact-dock ${open ? 'is-open' : ''}`} aria-label={t('Sürətli əlaqə')}>
       <div className="contact-dock-links" id="contact-dock-links" hidden={!open}>
