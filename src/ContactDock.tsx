@@ -7,14 +7,17 @@ import { usePreferences } from './preferences';
 export default function ContactDock() {
   const { settings } = useContent();
   const { t } = usePreferences();
-  const [open, setOpen] = useState(() => window.matchMedia('(min-width: 761px)').matches);
+  const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     let frame = 0;
     const update = () => {
       frame = 0;
       const courses = document.getElementById('courses');
-      setVisible(!!courses && courses.getBoundingClientRect().top <= window.innerHeight / 2);
+      const reachedCourses =
+        !!courses && courses.getBoundingClientRect().top <= window.innerHeight / 2;
+      setVisible(reachedCourses);
+      if (!reachedCourses) setOpen(false);
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update);
