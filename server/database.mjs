@@ -9,6 +9,10 @@ export const defaults = JSON.parse(
   readFileSync(join(projectRoot, 'shared/default-content.json'), 'utf8'),
 );
 
+const legacySolutions = JSON.parse(
+  readFileSync(join(projectRoot, 'server/legacy-solutions.json'), 'utf8'),
+);
+
 export function openDatabase(dbPath = defaultDbPath) {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(dbPath);
@@ -64,6 +68,20 @@ export function openDatabase(dbPath = defaultDbPath) {
       db.close();
       throw error;
     }
+  }
+  // Upgrade only the untouched original template; preserve all administrator edits/deletions.
+  const stored = JSON.parse(db.prepare('SELECT data FROM site_settings WHERE id=1').get().data);
+  if (
+    Array.isArray(stored.solutions) &&
+    stored.solutions.length === legacySolutions.length &&
+    stored.solutions.every((item, i) =>
+      Object.entries(legacySolutions[i]).every(
+        ([key, value]) => item[key] === value || (key === 'visual' && item[key] === undefined),
+      ),
+    )
+  ) {
+    stored.solutions = defaults.settings.solutions;
+    db.prepare('UPDATE site_settings SET data=? WHERE id=1').run(JSON.stringify(stored));
   }
   return db;
 }

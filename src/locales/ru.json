@@ -279,5 +279,17 @@
   "Praktika": "Практика",
   "Nəticə": "Результат",
   "Əlaqə": "Контакт",
-  "Qrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.": "Точное расписание группы уточняется после записи."
+  "Qrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.": "Точное расписание группы уточняется после записи.",
+  "Texniki Dəstək": "Техническая поддержка",
+  "Kompüter, noutbuk və ofis avadanlıqlarının diaqnostikası, təmiri, profilaktikası və operativ texniki xidməti.": "Диагностика, ремонт, профилактика и оперативное техническое обслуживание компьютеров, ноутбуков и офисного оборудования.",
+  "Şəbəkə Həlləri": "Сетевые решения",
+  "Yerli (LAN) və simsiz (Wi-Fi) şəbəkələrin layihələndirilməsi, kabel çəkilişi, avadanlıqların (router, switch) quraşdırılması və sazlanması.": "Проектирование локальных (LAN) и беспроводных (Wi-Fi) сетей, прокладка кабелей, установка и настройка маршрутизаторов и коммутаторов.",
+  "Sistem Həlləri": "Системные решения",
+  "Serverlərin quraşdırılması və idarə olunması, əməliyyat sistemlərinin yüklənməsi, ehtiyat nüsxələmə (backup) və bulud xidmətlərinin inteqrasiyası.": "Установка и администрирование серверов, установка операционных систем, резервное копирование и интеграция облачных сервисов.",
+  "Təhlükəsizlik Sistemləri (NVR və DVR)": "Системы безопасности (NVR и DVR)",
+  "Təhlükəsizlik və müşahidə kameralarının quraşdırılması, NVR/DVR sistemlərinin qoşulması, xarici izləmə və arxivləşdirmə həlləri.": "Установка камер безопасности и видеонаблюдения, подключение систем NVR/DVR, решения для удалённого наблюдения и архивирования.",
+  "Mağazalar üçün Satış Proqramları": "Программы для розничной торговли",
+  "Pərakəndə satış obyektləri və marketlər üçün POS sistemləri, barkod proqramları, kassa aparatları və anbar uçotu həllərinin tətbiqi.": "Внедрение POS-систем, программ для штрихкодов, кассовых аппаратов и решений для складского учёта в магазинах и маркетах.",
+  "Digər İT Həllər": "Другие ИТ-решения",
+  "Biznesinizin xüsusi tələblərinə uyğun fərdiləşdirilmiş digər texniki təminat və İT xidmətləri.": "Индивидуальные технические решения и ИТ-услуги с учётом особых потребностей вашего бизнеса."
 }

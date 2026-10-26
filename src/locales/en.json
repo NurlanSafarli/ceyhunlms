@@ -279,5 +279,17 @@
   "Praktika": "Practice",
   "Nəticə": "Outcome",
   "Əlaqə": "Contact",
-  "Qrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.": "The exact group schedule is confirmed after registration."
+  "Qrupun dəqiq cədvəli qeydiyyatdan sonra dəqiqləşdirilir.": "The exact group schedule is confirmed after registration.",
+  "Texniki Dəstək": "Technical Support",
+  "Kompüter, noutbuk və ofis avadanlıqlarının diaqnostikası, təmiri, profilaktikası və operativ texniki xidməti.": "Diagnostics, repair, preventive maintenance and prompt technical service for computers, laptops and office equipment.",
+  "Şəbəkə Həlləri": "Network Solutions",
+  "Yerli (LAN) və simsiz (Wi-Fi) şəbəkələrin layihələndirilməsi, kabel çəkilişi, avadanlıqların (router, switch) quraşdırılması və sazlanması.": "Design of local (LAN) and wireless (Wi-Fi) networks, cabling, installation and configuration of routers and switches.",
+  "Sistem Həlləri": "System Solutions",
+  "Serverlərin quraşdırılması və idarə olunması, əməliyyat sistemlərinin yüklənməsi, ehtiyat nüsxələmə (backup) və bulud xidmətlərinin inteqrasiyası.": "Server installation and administration, operating system installation, backups and cloud service integration.",
+  "Təhlükəsizlik Sistemləri (NVR və DVR)": "Security Systems (NVR & DVR)",
+  "Təhlükəsizlik və müşahidə kameralarının quraşdırılması, NVR/DVR sistemlərinin qoşulması, xarici izləmə və arxivləşdirmə həlləri.": "Installation of security and surveillance cameras, NVR/DVR setup, remote monitoring and archiving solutions.",
+  "Mağazalar üçün Satış Proqramları": "Retail Sales Software",
+  "Pərakəndə satış obyektləri və marketlər üçün POS sistemləri, barkod proqramları, kassa aparatları və anbar uçotu həllərinin tətbiqi.": "POS systems, barcode software, cash registers and inventory management solutions for retail stores and markets.",
+  "Digər İT Həllər": "Other IT Solutions",
+  "Biznesinizin xüsusi tələblərinə uyğun fərdiləşdirilmiş digər texniki təminat və İT xidmətləri.": "Customized technical solutions and IT services tailored to the specific needs of your business."
 }

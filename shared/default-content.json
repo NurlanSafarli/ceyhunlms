@@ -47,24 +47,45 @@
     "solutions": [
       {
         "id": "support",
-        "title": "Texniki dəstək və Help Desk",
-        "description": "Kompüterlərin sazlanması, proqram təminatının quraşdırılması və gündəlik texniki problemlərin həlli.",
+        "title": "Texniki Dəstək",
+        "description": "Kompüter, noutbuk və ofis avadanlıqlarının diaqnostikası, təmiri, profilaktikası və operativ texniki xidməti.",
         "published": true,
         "visual": "support"
       },
       {
+        "id": "networks",
+        "title": "Şəbəkə Həlləri",
+        "description": "Yerli (LAN) və simsiz (Wi-Fi) şəbəkələrin layihələndirilməsi, kabel çəkilişi, avadanlıqların (router, switch) quraşdırılması və sazlanması.",
+        "published": true,
+        "visual": "networks"
+      },
+      {
         "id": "systems",
-        "title": "Server və sistem idarəetməsi",
-        "description": "Windows və Linux serverlərinin qurulması, istifadəçi hesablarının və ehtiyat nüsxələrin idarə edilməsi.",
+        "title": "Sistem Həlləri",
+        "description": "Serverlərin quraşdırılması və idarə olunması, əməliyyat sistemlərinin yüklənməsi, ehtiyat nüsxələmə (backup) və bulud xidmətlərinin inteqrasiyası.",
         "published": true,
         "visual": "systems"
       },
       {
-        "id": "networks",
-        "title": "Şəbəkə və Wi-Fi həlləri",
-        "description": "Ofis şəbəkəsinin planlanması, router və switch sazlanması, təhlükəsiz Wi-Fi bağlantısının qurulması.",
+        "id": "surveillance",
+        "title": "Təhlükəsizlik Sistemləri (NVR və DVR)",
+        "description": "Təhlükəsizlik və müşahidə kameralarının quraşdırılması, NVR/DVR sistemlərinin qoşulması, xarici izləmə və arxivləşdirmə həlləri.",
         "published": true,
-        "visual": "networks"
+        "visual": "surveillance"
+      },
+      {
+        "id": "pos",
+        "title": "Mağazalar üçün Satış Proqramları",
+        "description": "Pərakəndə satış obyektləri və marketlər üçün POS sistemləri, barkod proqramları, kassa aparatları və anbar uçotu həllərinin tətbiqi.",
+        "published": true,
+        "visual": "pos"
+      },
+      {
+        "id": "custom",
+        "title": "Digər İT Həllər",
+        "description": "Biznesinizin xüsusi tələblərinə uyğun fərdiləşdirilmiş digər texniki təminat və İT xidmətləri.",
+        "published": true,
+        "visual": "custom"
       }
     ]
   },

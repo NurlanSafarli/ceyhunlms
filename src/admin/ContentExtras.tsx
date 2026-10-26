@@ -202,6 +202,9 @@ export default function ContentExtras({ settings, setSettings }: Props) {
                 <option value="networks">Şəbəkə / Wi-Fi</option>
                 <option value="cloud">Bulud</option>
                 <option value="security">Təhlükəsizlik</option>
+                <option value="surveillance">Kamera / NVR / DVR</option>
+                <option value="pos">Satış / POS sistemi</option>
+                <option value="custom">Fərdi İT həlləri</option>
               </select>
             </div>
             <label className="ad-checkbox">

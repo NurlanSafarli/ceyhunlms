@@ -723,3 +723,127 @@
     bottom: 0;
   }
 }
+
+.solution-detail-icon {
+  position: absolute;
+  z-index: 2;
+  left: calc(50% + 20px);
+  top: calc(50% + 16px);
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  background: var(--surface);
+}
+.solution-visual-support .solution-detail-icon {
+  animation: service-repair 3s ease-in-out infinite;
+}
+.solution-visual-surveillance {
+  background: #edf2fa;
+  color: #405f91;
+}
+.solution-visual-surveillance .solution-main-icon {
+  animation: camera-pan 6s ease-in-out infinite;
+}
+.solution-camera-field {
+  position: absolute;
+  width: 110px;
+  height: 90px;
+  left: 50%;
+  top: 35%;
+  background: currentColor;
+  opacity: 0.08;
+  clip-path: polygon(0 0, 100% 30%, 70% 100%);
+  transform-origin: top left;
+  animation: camera-pan 6s ease-in-out infinite;
+}
+.solution-visual-pos {
+  background: #fff3e8;
+  color: #a64a12;
+}
+.solution-visual-pos .solution-main-icon {
+  animation: none;
+}
+.solution-scan-line {
+  position: absolute;
+  z-index: 3;
+  width: 48px;
+  height: 2px;
+  left: calc(50% - 24px);
+  top: calc(50% - 20px);
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  animation: barcode-scan 3s ease-in-out infinite;
+}
+.solution-visual-custom {
+  background: #f1edfc;
+  color: #7353a3;
+}
+.solution-visual-custom .solution-detail-icon {
+  animation: puzzle-connect 4s ease-in-out infinite;
+}
+@keyframes service-repair {
+  0%,
+  100% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+@keyframes camera-pan {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes barcode-scan {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(40px);
+    opacity: 1;
+  }
+}
+@keyframes puzzle-connect {
+  0%,
+  100% {
+    transform: translate(4px, 4px);
+  }
+  50% {
+    transform: translate(0, 0);
+  }
+}
+[data-theme='dark'] .solution-visual-surveillance {
+  background: #243249;
+  color: #b1c7ed;
+}
+[data-theme='dark'] .solution-visual-pos {
+  background: #3b2a20;
+  color: #ffc298;
+}
+[data-theme='dark'] .solution-visual-custom {
+  background: #322a45;
+  color: #cfb7ff;
+}
+@media (min-width: 761px) and (max-width: 1000px) {
+  .solutions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .solution-visual *,
+  .solution-visual-surveillance .solution-main-icon,
+  .solution-visual-support .solution-detail-icon,
+  .solution-visual-custom .solution-detail-icon {
+    animation: none;
+  }
+}

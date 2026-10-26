@@ -243,7 +243,16 @@ export function installAdmin(app, db) {
           return {
             id,
             visual: item.visual
-              ? choice(item, 'visual', ['support', 'systems', 'networks', 'cloud', 'security'])
+              ? choice(item, 'visual', [
+                  'support',
+                  'systems',
+                  'networks',
+                  'cloud',
+                  'security',
+                  'surveillance',
+                  'pos',
+                  'custom',
+                ])
               : { support: 'support', systems: 'systems', networks: 'networks' }[id] || 'support',
             title: text(item, 'title', 120, true),
             description: text(item, 'description', 1500, true),
