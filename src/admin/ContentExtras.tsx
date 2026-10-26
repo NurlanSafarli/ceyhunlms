@@ -256,3 +256,89 @@ export default function ContentExtras({ settings, setSettings }: Props) {
     </section>
   );
 }
+
+export function LogoEditor({ settings, setSettings, request }: Props) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  async function save(file?: File) {
+    setError('');
+    setMessage('');
+    if (
+      file &&
+      (file.size > 5 * 1024 * 1024 ||
+        !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+    ) {
+      setError('PNG, JPG və ya WebP seçin. Maksimum ölçü: 5 MB.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await request(
+        '/logo',
+        file
+          ? {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: file,
+            }
+          : { method: 'DELETE' },
+      );
+      setSettings((current) => ({ ...current, ...result }));
+      setMessage(
+        file ? 'Loqo yükləndi və saytda yayımlandı.' : 'Loqo silindi. Brend adı göstəriləcək.',
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="ad-wide ad-instructor-upload">
+      <h3>Saytın loqosu</h3>
+      <p>
+        PNG, JPG və ya WebP, maksimum 5 MB. Şəffaf fonlu, üfüqi loqo tövsiyə olunur. Seçilən fayl
+        dərhal saxlanır və bu serverdəki saytın yuxarı və aşağı hissəsində görünür.
+      </p>
+      <div className="ad-photo-editor">
+        {settings.logoUrl && (
+          <>
+            <img className="ad-logo-preview" src={settings.logoUrl} alt="Loqo — önbaxış" />
+            <button
+              type="button"
+              className="ad-btn ad-secondary"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm('Loqo silinsin? Brend adı yenidən göstəriləcək.')) void save();
+              }}
+            >
+              Loqonu sil
+            </button>
+          </>
+        )}
+        <label className="ad-field" htmlFor="site-logo">
+          Loqo əlavə et / dəyiş
+        </label>
+        <input
+          id="site-logo"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          disabled={busy}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (file) void save(file);
+          }}
+        />
+        {busy && <p role="status">Loqo yüklənir…</p>}
+        {message && <p role="status">{message}</p>}
+        {error && (
+          <p role="alert" className="ad-alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

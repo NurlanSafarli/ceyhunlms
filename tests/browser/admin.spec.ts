@@ -295,3 +295,42 @@ test('instructor gallery accepts multiple photos and supports keyboard scrolling
   await expect(page.locator('.ad-photo-list img')).toHaveCount(0);
   await preview.close();
 });
+
+test('logo upload appears in both brand locations and can be replaced or removed', async ({
+  page,
+}) => {
+  await login(page);
+  await nav(page, 'Sayt məzmunu');
+  const image = await sharp({
+    create: { width: 300, height: 90, channels: 4, background: '#12345680' },
+  })
+    .png()
+    .toBuffer();
+  const input = page.getByLabel('Loqo əlavə et / dəyiş', { exact: true });
+  await input.setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: image });
+  await expect(page.getByRole('status')).toContainText('Loqo yükləndi');
+  const first = await page.getByAltText('Loqo — önbaxış').getAttribute('src');
+  await page.getByRole('button', { name: 'Məzmunu yadda saxla' }).click();
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'Sayta bax', exact: true })).toBeVisible();
+  await nav(page, 'Sayt məzmunu');
+  await expect(page.getByAltText('Loqo — önbaxış')).toHaveAttribute('src', first!);
+  const publicPage = await page.context().newPage();
+  await publicPage.goto('/');
+  await expect(publicPage.locator('.brand-image')).toHaveCount(2);
+  for (const logo of await publicPage.locator('.brand-image').all()) {
+    await expect(logo).toHaveAttribute('src', first!);
+    expect(
+      await logo.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+    ).toBe(true);
+  }
+  await input.setInputFiles({ name: 'replacement.png', mimeType: 'image/png', buffer: image });
+  await expect(page.getByAltText('Loqo — önbaxış')).not.toHaveAttribute('src', first!);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Loqonu sil', exact: true }).click();
+  await expect(page.getByAltText('Loqo — önbaxış')).toHaveCount(0);
+  await publicPage.reload();
+  await expect(publicPage.locator('.brand-image')).toHaveCount(0);
+  await expect(publicPage.locator('.brand-wordmark')).toHaveCount(2);
+  await publicPage.close();
+});

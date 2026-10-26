@@ -167,6 +167,29 @@ export function installAdmin(app, db) {
         .all(),
     }),
   );
+  app.get('/api/public/logo', (_req, res) => {
+    const logo = db.prepare('SELECT data FROM site_logo WHERE id=1').get();
+    if (!logo) return res.status(404).json({ error: 'Loqo tapılmadı.' });
+    res.type('image/webp').send(Buffer.from(logo.data));
+  });
+  app.put(
+    '/api/admin/logo',
+    express.raw({ type: 'application/octet-stream', limit: '5mb' }),
+    async (req, res) => {
+      if (!Buffer.isBuffer(req.body) || !req.body.length) fail('Loqo faylı tələb olunur.');
+      const image = await preparePhoto(req.body);
+      const version = randomUUID();
+      db.prepare(
+        'INSERT INTO site_logo VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,version=excluded.version',
+      ).run(image, version);
+      res.json({ logoUrl: `/api/public/logo?v=${version}` });
+    },
+  );
+  app.delete('/api/admin/logo', (_req, res) => {
+    db.prepare('DELETE FROM site_logo WHERE id=1').run();
+    res.json({ logoUrl: '' });
+  });
+
   app.get('/api/public/instructor-photo', (_req, res) => {
     const photo = db.prepare("SELECT data FROM public_images WHERE id='instructor'").get();
     if (!photo) return res.status(404).json({ error: 'Şəkil tapılmadı.' });
@@ -229,7 +252,7 @@ export function installAdmin(app, db) {
     const b = body(req),
       current = readContent(db, false).settings;
     for (const [key, value] of Object.entries(b)) {
-      if (key === 'instructorPhotoUrl' || key === 'instructorPhotos') continue; // Derived from the separately uploaded image.
+      if (key === 'logoUrl' || key === 'instructorPhotoUrl' || key === 'instructorPhotos') continue; // Derived from the separately uploaded image.
       if (key === 'solutions') {
         if (!Array.isArray(value) || value.length > 12) fail('Ən çox 12 IT həlli əlavə edin.');
         const ids = new Set();

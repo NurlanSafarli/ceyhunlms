@@ -1821,3 +1821,12 @@
   border-radius: 7px;
   cursor: pointer;
 }
+
+.ad-photo-editor .ad-logo-preview {
+  width: min(280px, 100%);
+  height: 100px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #d5dce9;
+  border-radius: 8px;
+}

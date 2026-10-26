@@ -1,4 +1,4 @@
-import ContentExtras, { InstructorPhotoEditor } from './ContentExtras';
+import ContentExtras, { InstructorPhotoEditor, LogoEditor } from './ContentExtras';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
@@ -1138,6 +1138,13 @@ export default function Admin() {
                         <p>{group.description}</p>
                       </div>
                       <div className="ad-form-grid">
+                        {group.fields.some((field) => field.key === 'brandName') && (
+                          <LogoEditor
+                            settings={settings}
+                            setSettings={setSettings}
+                            request={request}
+                          />
+                        )}
                         {group.fields.some((field) => field.key === 'instructorName') && (
                           <InstructorPhotoEditor
                             settings={settings}

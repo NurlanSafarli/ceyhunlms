@@ -519,6 +519,56 @@ test('social profile settings validate URLs, publish changes and support hiding 
   assert.equal((await call('/api/public/content', { auth: false })).data.settings.instagramUrl, '');
 });
 
+test('logo upload validates images, survives backup and can be removed', async () => {
+  const image = await sharp({
+    create: { width: 100, height: 140, channels: 3, background: '#dceaff' },
+  })
+    .png()
+    .toBuffer();
+  const upload = (raw, extra = {}) =>
+    call('/api/admin/logo', {
+      method: 'PUT',
+      raw,
+      headers: { 'Content-Type': 'application/octet-stream' },
+      ...extra,
+    });
+  assert.equal((await upload(image, { auth: false })).status, 401);
+  assert.equal(
+    (
+      await upload(image, {
+        headers: { 'Content-Type': 'application/octet-stream', 'X-CSRF-Token': 'wrong' },
+      })
+    ).status,
+    403,
+  );
+  const first = await upload(image);
+  assert.equal(first.status, 200);
+  const photoUrl = first.data.logoUrl;
+  const response = await fetch(base + photoUrl);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /image\/webp/);
+  assert.equal((await sharp(Buffer.from(await response.arrayBuffer())).metadata()).width, 100);
+  assert.equal(
+    (await upload(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))).status,
+    400,
+  );
+  assert.equal((await upload(Buffer.alloc(5 * 1024 * 1024 + 1))).status, 413);
+  assert.equal(
+    (await call('/api/public/content', { auth: false })).data.settings.logoUrl,
+    photoUrl,
+  );
+  const backup = join(dir, 'with-logo.sqlite');
+  transferDatabase(dbPath, backup);
+  const restored = openDatabase(backup);
+  assert.ok(restored.prepare('SELECT data FROM site_logo WHERE id=1').get().data.length);
+  restored.close();
+  const replacement = await upload(image);
+  assert.notEqual(replacement.data.logoUrl, photoUrl);
+  assert.equal((await call('/api/admin/logo', { method: 'DELETE' })).status, 200);
+  assert.equal((await fetch(base + photoUrl)).status, 404);
+  assert.equal((await call('/api/public/content', { auth: false })).data.settings.logoUrl, '');
+});
+
 test('instructor photo upload validates images, survives backup and can be removed', async () => {
   const image = await sharp({
     create: { width: 100, height: 140, channels: 3, background: '#dceaff' },
