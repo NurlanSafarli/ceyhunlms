@@ -960,3 +960,73 @@
 [data-theme='dark'] .brand-dot {
   color: #fd6a02;
 }
+
+.contact-dock {
+  position: fixed;
+  z-index: 35;
+  right: max(12px, env(safe-area-inset-right));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: var(--surface);
+  box-shadow: 0 5px 24px #172f541a;
+}
+.contact-dock-links,
+.contact-dock .social-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+.contact-dock-links[hidden] {
+  display: none;
+}
+.contact-dock .social-link,
+.contact-dock-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.contact-dock .social-link {
+  transition:
+    background 150ms,
+    color 150ms;
+  transform: none;
+}
+.contact-dock .contact-phone {
+  color: #2f63d8;
+  background: var(--accent-soft);
+}
+.contact-dock-toggle {
+  color: #fff;
+  background: #2f63d8;
+  border: 0;
+  cursor: pointer;
+}
+.contact-dock-toggle:hover {
+  background: #2452bc;
+}
+@media (max-width: 760px) {
+  .contact-dock {
+    top: auto;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    transform: none;
+    right: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-dock .social-link {
+    transition: none;
+  }
+}
+
+[data-theme='dark'] .contact-dock .contact-phone {
+  color: #9cbeff;
+}

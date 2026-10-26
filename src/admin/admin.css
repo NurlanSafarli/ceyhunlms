@@ -1830,3 +1830,42 @@
   border: 1px solid #d5dce9;
   border-radius: 8px;
 }
+
+.ad-app,
+.ad-login,
+.ad-loading-screen {
+  --accent: #2f63d8;
+  --accent-hover: #2452bc;
+  --accent-soft: #edf3ff;
+  --ink: #243247;
+  --canvas: #fbfcff;
+}
+.ad-brand-identity {
+  font-size: 23px;
+  margin-bottom: 28px;
+}
+.ad-sidebar > .ad-brand-identity {
+  margin: 0 10px 24px;
+}
+.ad-brand-identity .brand-tagline {
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+.ad-primary,
+.ad-primary:hover {
+  background: #2f63d8;
+  border-color: #2f63d8;
+  color: #fff;
+}
+.ad-sidebar nav > .ad-nav-active {
+  background: #edf3ff;
+  color: #2f63d8;
+}
+
+.ad-sidebar {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ad-sidebar > * {
+  flex-shrink: 0;
+}

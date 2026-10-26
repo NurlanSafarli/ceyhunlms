@@ -33,7 +33,8 @@ import SocialLinks from './SocialLinks';
 import InstructorGallery from './InstructorGallery';
 import SolutionVisual from './SolutionVisual';
 import LanguagePicker from './LanguagePicker';
-import BrandMark from './BrandMark';
+import BrandIdentity from './BrandIdentity';
+import ContactDock from './ContactDock';
 import { usePreferences, useLocalizedView } from './preferences';
 
 const pagesMode = import.meta.env.MODE === 'pages';
@@ -44,39 +45,13 @@ const courseIcons: Record<string, typeof Headphones> = {
 };
 
 function Brand({ light = false }: { light?: boolean }) {
-  const localize = useLocalizedView();
   const { settings } = useContent();
-  return localize(
-    <a
-      className={`brand ${light ? 'brand-light' : ''}`}
-      href="#home"
-      aria-label={`${settings.brandName} — ana səhifə`}
-    >
-      {settings.logoUrl ? (
-        <img className="brand-image" src={settings.logoUrl} alt="" />
-      ) : (
-        <span className="brand-symbol">
-          <BrandMark />
-        </span>
-      )}
-      <span className="brand-copy">
-        <span className="brand-wordmark">
-          {/tech$/i.test(settings.brandName.trim()) ? (
-            <>
-              {settings.brandName
-                .trim()
-                .replace(/\s*tech$/i, '')
-                .toLowerCase()}
-              <span className="brand-tech">tech</span>
-            </>
-          ) : (
-            settings.brandName
-          )}
-          <span className="brand-dot">.</span>
-        </span>
-        <span className="brand-tagline">INNOVATE | EDUCATE | INTEGRATE</span>
-      </span>
-    </a>,
+  return (
+    <BrandIdentity
+      name={settings.brandName}
+      logoUrl={settings.logoUrl}
+      className={light ? 'brand-light' : ''}
+    />
   );
 }
 
@@ -1269,6 +1244,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <ContactDock />
       {privacyOpen && <PrivacyDialog onClose={() => setPrivacyOpen(false)} />}
     </>,
   );

@@ -1,3 +1,4 @@
+import BrandIdentity from '../BrandIdentity';
 import ContentExtras, { InstructorPhotoEditor, LogoEditor } from './ContentExtras';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
@@ -13,7 +14,6 @@ import {
   ChevronRight,
   CircleHelp,
   ClipboardList,
-  Code2,
   FileText,
   FolderOpen,
   GraduationCap,
@@ -509,9 +509,7 @@ export default function Admin() {
           <ArrowLeft size={16} /> Sayta qayıt
         </a>
         <div className="ad-login-card">
-          <div className="ad-login-logo">
-            <Code2 size={29} />
-          </div>
+          <BrandIdentity href="/" className="ad-brand-identity" />
           <span className="ad-eyebrow">JAYHUN TECH / İDARƏETMƏ</span>
           <h1>
             Xoş gəlmisiniz<span>.</span>
@@ -563,12 +561,12 @@ export default function Admin() {
   return (
     <div className="ad-app">
       <aside className={`ad-sidebar ${menu ? 'ad-sidebar-open' : ''}`}>
-        <a href="/admin" className="ad-brand">
-          <span>
-            <Code2 size={23} />
-          </span>
-          jayhun<span className="ad-brand-light">tech.</span>
-        </a>
+        <BrandIdentity
+          href="/admin"
+          name={settings.brandName || 'Jayhun Tech'}
+          logoUrl={settings.logoUrl || ''}
+          className="ad-brand-identity"
+        />
         <div className="ad-workspace">
           <span className="ad-workspace-icon">
             <GraduationCap size={19} />

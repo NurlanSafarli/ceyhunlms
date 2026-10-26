@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Code2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import './admin.css';
+import BrandIdentity from '../BrandIdentity';
 
 export default function PagesAdmin() {
   const adminUrl = import.meta.env.VITE_ADMIN_URL || '';
@@ -13,9 +14,7 @@ export default function PagesAdmin() {
         <ArrowLeft size={16} /> Sayta qayıt
       </a>
       <div className="ad-login-card">
-        <div className="ad-login-logo">
-          <Code2 size={29} />
-        </div>
+        <BrandIdentity href={import.meta.env.BASE_URL} className="ad-brand-identity" />
         <span className="ad-eyebrow">JAYHUN TECH / İDARƏETMƏ</span>
         <h1>
           Admin panel<span>.</span>
