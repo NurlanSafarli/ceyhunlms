@@ -1064,3 +1064,30 @@
     animation: none;
   }
 }
+
+/* Comfortable touch targets without changing desktop spacing. */
+@media (pointer: coarse) {
+  .language-options button,
+  .language-control summary,
+  .header-cta {
+    min-height: 44px;
+  }
+  .menu-toggle,
+  .theme-toggle,
+  .gallery-arrow {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (pointer: coarse) and (max-width: 600px) {
+  .header-inner > .brand {
+    flex-basis: calc(100% - 56px);
+  }
+}
+
+.language-control summary {
+  touch-action: manipulation;
+}
+.terminal-comment {
+  color: #b0c4e4;
+}

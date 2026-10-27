@@ -61,3 +61,21 @@ test('Pages privacy and FAQ explain the WhatsApp registration flow', async ({ pa
   await page.getByRole('button', { name: 'Qeydiyyatdan sonra nə baş verir?' }).click();
   await expect(page.locator('#faq-answer-4')).toContainText('WhatsApp');
 });
+
+test('Pages language picker supports repeated touch selections', async ({ page }, info) => {
+  await page.goto('./');
+  for (const [name, language] of [
+    ['English', 'en'],
+    ['Русский', 'ru'],
+    ['Azərbaycan dili', 'az'],
+  ]) {
+    const trigger = page.locator('.language-control summary');
+    if (info.project.name === 'mobile') await trigger.tap();
+    else await trigger.click();
+    await trigger.dispatchEvent('focusout', { relatedTarget: null });
+    const option = page.getByRole('button', { name, exact: true });
+    if (info.project.name === 'mobile') await option.tap();
+    else await option.click();
+    await expect(page.locator('html')).toHaveAttribute('lang', language);
+  }
+});

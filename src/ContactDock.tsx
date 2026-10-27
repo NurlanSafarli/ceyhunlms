@@ -15,7 +15,9 @@ export default function ContactDock() {
       frame = 0;
       const courses = document.getElementById('courses');
       const reachedCourses =
-        !!courses && courses.getBoundingClientRect().top <= window.innerHeight / 2;
+        !!courses &&
+        !courses.hidden &&
+        courses.getBoundingClientRect().top <= window.innerHeight / 2;
       setVisible(reachedCourses);
       if (!reachedCourses) setOpen(false);
     };

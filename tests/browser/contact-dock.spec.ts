@@ -34,3 +34,17 @@ test('contact dock appears at courses, remains available below and hides on retu
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await expect(dock).toHaveCount(0);
 });
+
+test('hidden courses do not trigger the contact dock at the top of the page', async ({ page }) => {
+  await page.route('**/api/public/content', async (route) => {
+    const response = await route.fetch();
+    const content = await response.json();
+    content.settings.showCourses = false;
+    await route.fulfill({ response, json: content });
+  });
+  await page.goto('/');
+  await expect(page.locator('#courses')).toBeHidden();
+  await expect(page.getByRole('complementary', { name: 'Sürətli əlaqə' })).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo({ top: 1000, behavior: 'instant' }));
+  await expect(page.getByRole('complementary', { name: 'Sürətli əlaqə' })).toHaveCount(0);
+});

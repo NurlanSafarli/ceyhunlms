@@ -45,3 +45,32 @@ test('language and theme changes persist and keep the interface usable', async (
       .evaluate((node) => getComputedStyle(node).animationName),
   ).toBe('none');
 });
+
+test('language selection survives touch blur and repeated mobile taps', async ({ page }, info) => {
+  await page.goto('/');
+  const trigger = page.locator('.language-control summary');
+  async function activate(locator: ReturnType<typeof page.locator>) {
+    if (info.project.name === 'mobile') await locator.tap();
+    else await locator.click();
+  }
+  for (const [label, language] of [
+    ['English', 'en'],
+    ['Русский', 'ru'],
+    ['Azərbaycan dili', 'az'],
+    ['English', 'en'],
+  ]) {
+    await activate(trigger);
+    // iOS can send focusout with relatedTarget=null before the option's click.
+    await trigger.dispatchEvent('focusout', { relatedTarget: null });
+    const option = page.getByRole('button', { name: label, exact: true });
+    await expect(option).toBeVisible();
+    await activate(option);
+    await expect(page.locator('html')).toHaveAttribute('lang', language);
+    await expect(page.locator('.language-control')).not.toHaveAttribute('open', '');
+  }
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await activate(trigger);
+  await activate(page.locator('h1'));
+  await expect(page.getByRole('button', { name: 'Русский', exact: true })).not.toBeVisible();
+});

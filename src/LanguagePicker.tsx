@@ -56,7 +56,9 @@ export default function LanguagePicker() {
       className="language-control"
       ref={ref}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node))
+        // Touch browsers may blur the summary without focusing the tapped button.
+        // Keep the options mounted until its click completes; outside taps close above.
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node))
           event.currentTarget.open = false;
       }}
       onKeyDown={(event) => {
