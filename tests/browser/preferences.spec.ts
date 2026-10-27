@@ -1,16 +1,20 @@
 import { test, expect } from '@playwright/test';
+import { selectLanguage } from '../language-picker';
 
 test('language and theme changes persist and keep the interface usable', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.language-control summary svg.language-flag')).toBeVisible();
-  await page.locator('.language-control summary').focus();
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'English', exact: true })).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.locator('.language-control summary')).toBeFocused();
-  await expect(page.getByRole('button', { name: 'English', exact: true })).not.toBeVisible();
-  await page.locator('.language-control summary').click();
-  await page.getByRole('button', { name: 'English', exact: true }).click();
+  if (await page.locator('.language-control').isVisible()) {
+    await expect(page.locator('.language-control summary svg.language-flag')).toBeVisible();
+    await page.locator('.language-control summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('button', { name: 'English', exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.language-control summary')).toBeFocused();
+  } else {
+    await expect(page.locator('.language-native .language-flag')).toBeVisible();
+    await expect(page.locator('.language-native select')).toBeVisible();
+  }
+  await selectLanguage(page, 'en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Your journey');
   await expect(
@@ -21,8 +25,7 @@ test('language and theme changes persist and keep the interface usable', async (
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.locator('.language-control summary').click();
-  await page.getByRole('button', { name: 'Русский', exact: true }).click();
+  await selectLanguage(page, 'ru');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Твой путь');
   await expect(
     page.getByRole('heading', { name: 'Системное администрирование', exact: true }),
@@ -32,8 +35,7 @@ test('language and theme changes persist and keep the interface usable', async (
   );
   await page.getByRole('button', { name: 'Включить светлую тему', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.locator('.language-control summary').click();
-  await page.getByRole('button', { name: 'Azərbaycan dili', exact: true }).click();
+  await selectLanguage(page, 'az');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('IT karyerana');
   await expect(page.locator('.about-signature')).toHaveCount(0);
   await expect(page.getByText('BEHIND THE SCREENS', { exact: true })).toHaveCount(0);
@@ -59,18 +61,24 @@ test('language selection survives touch blur and repeated mobile taps', async ({
     ['Azərbaycan dili', 'az'],
     ['English', 'en'],
   ]) {
-    await activate(trigger);
-    // iOS can send focusout with relatedTarget=null before the option's click.
-    await trigger.dispatchEvent('focusout', { relatedTarget: null });
-    const option = page.getByRole('button', { name: label, exact: true });
-    await expect(option).toBeVisible();
-    await activate(option);
+    if (await page.locator('.language-native').isVisible()) {
+      await page.locator('.language-native select').selectOption(language);
+      await page
+        .locator('.language-native select')
+        .dispatchEvent('focusout', { relatedTarget: null });
+    } else {
+      await activate(trigger);
+      await trigger.dispatchEvent('focusout', { relatedTarget: null });
+      const option = page.getByRole('button', { name: label, exact: true });
+      await expect(option).toBeVisible();
+      await activate(option);
+    }
     await expect(page.locator('html')).toHaveAttribute('lang', language);
     await expect(page.locator('.language-control')).not.toHaveAttribute('open', '');
   }
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await activate(trigger);
+  if (await trigger.isVisible()) await activate(trigger);
   await activate(page.locator('h1'));
   await expect(page.getByRole('button', { name: 'Русский', exact: true })).not.toBeVisible();
 });

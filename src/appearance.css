@@ -1091,3 +1091,47 @@
 .terminal-comment {
   color: #b0c4e4;
 }
+
+/* Native selection avoids Safari's details/focus event ordering on touch devices. */
+.language-native {
+  display: none;
+  position: relative;
+}
+.language-native-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 92px;
+  height: 44px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.language-native select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  font-size: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.language-native:focus-within .language-native-display {
+  outline: 2px solid #2563c5;
+  outline-offset: 2px;
+}
+@media (any-pointer: coarse), (max-width: 760px) {
+  .language-native {
+    display: block;
+  }
+  .language-control {
+    display: none;
+  }
+}

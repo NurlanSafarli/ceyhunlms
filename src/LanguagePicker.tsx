@@ -52,47 +52,67 @@ export default function LanguagePicker() {
     return () => document.removeEventListener('pointerdown', close);
   }, []);
   return (
-    <details
-      className="language-control"
-      ref={ref}
-      onBlur={(event) => {
-        // Touch browsers may blur the summary without focusing the tapped button.
-        // Keep the options mounted until its click completes; outside taps close above.
-        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node))
-          event.currentTarget.open = false;
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.currentTarget.open = false;
-          event.currentTarget.querySelector('summary')?.focus();
-        }
-      }}
-    >
-      <summary aria-label={t('Saytın dili')}>
-        <Flag language={language} />
-        {languages.find((item) => item.code === language)?.label}
-        <ChevronDown size={12} />
-      </summary>
-      <div className="language-options" role="group" aria-label={t('Saytın dili')}>
-        {languages.map((item) => (
-          <button
-            type="button"
-            key={item.code}
-            aria-label={item.name}
-            aria-pressed={language === item.code}
-            onClick={() => {
-              setLanguage(item.code);
-              if (ref.current) {
-                ref.current.open = false;
-                ref.current.querySelector('summary')?.focus();
-              }
-            }}
-          >
-            <Flag language={item.code} />
-            {item.label}
-          </button>
-        ))}
+    <>
+      <div className="language-native">
+        <span className="language-native-display" aria-hidden="true">
+          <Flag language={language} />
+          {languages.find((item) => item.code === language)?.label}
+          <ChevronDown size={12} />
+        </span>
+        <select
+          aria-label={t('Saytın dili')}
+          value={language}
+          onChange={(event) => setLanguage(event.currentTarget.value as Language)}
+        >
+          {languages.map((item) => (
+            <option key={item.code} value={item.code}>
+              {item.name}
+            </option>
+          ))}
+        </select>
       </div>
-    </details>
+      <details
+        className="language-control"
+        ref={ref}
+        onBlur={(event) => {
+          // Touch browsers may blur the summary without focusing the tapped button.
+          // Keep the options mounted until its click completes; outside taps close above.
+          if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node))
+            event.currentTarget.open = false;
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.currentTarget.open = false;
+            event.currentTarget.querySelector('summary')?.focus();
+          }
+        }}
+      >
+        <summary aria-label={t('Saytın dili')}>
+          <Flag language={language} />
+          {languages.find((item) => item.code === language)?.label}
+          <ChevronDown size={12} />
+        </summary>
+        <div className="language-options" role="group" aria-label={t('Saytın dili')}>
+          {languages.map((item) => (
+            <button
+              type="button"
+              key={item.code}
+              aria-label={item.name}
+              aria-pressed={language === item.code}
+              onClick={() => {
+                setLanguage(item.code);
+                if (ref.current) {
+                  ref.current.open = false;
+                  ref.current.querySelector('summary')?.focus();
+                }
+              }}
+            >
+              <Flag language={item.code} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </details>
+    </>
   );
 }

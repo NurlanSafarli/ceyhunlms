@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { selectLanguage } from '../language-picker';
 
 test('Pages loads assets and syllabus under its repository subpath', async ({ page }) => {
   const errors: string[] = [];
@@ -62,20 +63,14 @@ test('Pages privacy and FAQ explain the WhatsApp registration flow', async ({ pa
   await expect(page.locator('#faq-answer-4')).toContainText('WhatsApp');
 });
 
-test('Pages language picker supports repeated touch selections', async ({ page }, info) => {
+test('Pages language picker supports repeated touch selections', async ({ page }) => {
   await page.goto('./');
-  for (const [name, language] of [
+  for (const [, language] of [
     ['English', 'en'],
     ['Русский', 'ru'],
     ['Azərbaycan dili', 'az'],
   ]) {
-    const trigger = page.locator('.language-control summary');
-    if (info.project.name === 'mobile') await trigger.tap();
-    else await trigger.click();
-    await trigger.dispatchEvent('focusout', { relatedTarget: null });
-    const option = page.getByRole('button', { name, exact: true });
-    if (info.project.name === 'mobile') await option.tap();
-    else await option.click();
+    await selectLanguage(page, language);
     await expect(page.locator('html')).toHaveAttribute('lang', language);
   }
 });
