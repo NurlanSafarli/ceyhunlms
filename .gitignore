@@ -13,3 +13,6 @@ playwright-report/
 *.sqlite-*
 *.db
 *.db-*
+tests/.php/
+php/config.php
+php/data/
