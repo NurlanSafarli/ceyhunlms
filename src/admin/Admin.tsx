@@ -892,7 +892,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                         </select>
                       )}
                       {collection === 'registrations' && (
-                        <a className="ad-btn ad-secondary" href="/api/admin/registrations.csv">
+                        <a className="ad-btn ad-secondary" href="${API_BASE}/api/admin/registrations.csv">
                           <ArrowDownToLine size={15} /> CSV ixrac
                         </a>
                       )}
@@ -1005,7 +1005,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                                     {row.file_name ? (
                                       <a
                                         className="ad-text-btn"
-                                        href={`/api/admin/materials/${row.id}/file`}
+                                        href={`${API_BASE}/api/admin/materials/${row.id}/file`}
                                       >
                                         <ArrowDownToLine size={14} />
                                         {row.file_name}
@@ -1330,7 +1330,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                   />
                   {draft.file_name && (
                     <div className="ad-current-file">
-                      <a href={`/api/admin/materials/${editor.id}/file`}>{draft.file_name}</a>
+                      <a href={`${API_BASE}/api/admin/materials/${editor.id}/file`}>{draft.file_name}</a>
                       <button
                         className="ad-text-btn ad-danger-icon"
                         type="button"
