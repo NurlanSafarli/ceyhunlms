@@ -11,7 +11,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (import.meta.env.MODE === 'pages') return;
     const controller = new AbortController();
-    fetch('/api/public/content', { signal: controller.signal })
+fetch("https://ceyhunlms.onrender.com/api/public/content", { signal })
       .then(async (response) => {
         if (!response.ok) throw new Error();
         return response.json();
