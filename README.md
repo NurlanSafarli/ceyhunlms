@@ -98,7 +98,36 @@ Sosial linklər üçün **Sayt məzmunu → Sosial şəbəkələr** bölməsind�
 
 **Dillər və görünüş:** Saytın header-ində AZ / ENG / RU seçimi və açıq/tünd rejim düyməsi var. Seçimlər həmin brauzerdə yadda saxlanır. Hazır interfeys, ilkin sayt məzmunu və sillabuslar tərcümə olunub. Tərcümələr `src/locales/en.json` və `src/locales/ru.json` fayllarında Azərbaycan dilindəki mətnə uyğun saxlanılır; admin panelində tamamilə yeni mətn yazıldıqda onun tərcüməsi də bu fayllara əlavə edilməlidir. Tərcüməsi olmayan mətn orijinal dildə göstərilir. Admin paneli Azərbaycan dilində qalır.
 
-## Admin paneli serverə yerləşdirmək
+## Canlı sayt: jayhuntech.az (PHP hostinq)
+
+Canlı sayt cPanel paylaşımlı hostinqdə işləyir. Orada Node.js yoxdur, ona görə backend `php/` qovluğundakı PHP versiyasıdır (PHP 8.2+, SQLite). Bu versiya Node serveri ilə eyni API, verilənlər bazası sxemi və yoxlamalardan istifadə edir. Sayt, `/admin` paneli və `/api` eyni domendə işləyir.
+
+**Serverdəki quruluş:**
+
+| Serverdə | Repozitoriyada |
+| --- | --- |
+| `public_html/` (sayt) | `npm run build` → `dist/` qovluğunun içindəkilər |
+| `public_html/api.php` | `php/api.php` |
+| `public_html/.htaccess` | `php/htaccess.txt` |
+| `jayhuntech/app.php`, `jayhuntech/bootstrap.php` | `php/app.php`, `php/bootstrap.php` |
+| `jayhuntech/shared/default-content.json` | `shared/default-content.json` |
+| `jayhuntech/shared/legacy-solutions.json` | `server/legacy-solutions.json` |
+| `jayhuntech/config.php` | `php/config.example.php` əsasında (repoya əlavə edilmir) |
+| `jayhuntech/data/registrations.sqlite` | baza — **heç vaxt üzərinə yazmayın** |
+
+`jayhuntech/` qovluğu `public_html`-dən kənardadır, ona görə kod və baza internetdən görünmür.
+
+**Dəyişikliyi canlı sayta çıxarmaq:**
+
+1. Sayt (React) dəyişibsə: `npm run build`, sonra `dist/` içindəkiləri FTP ilə `public_html/`-ə yükləyin. Əvvəlcə `assets/`, ən sonda `index.html`.
+2. Backend dəyişibsə: `php/app.php` faylını `jayhuntech/app.php` kimi yükləyin.
+3. Əvvəlcə lokalda yoxlayın:
+   - `npm run test:php` — API testlərini PHP backend-ə qarşı işlədir;
+   - `npm run build && php -S 127.0.0.1:8080 php/router.php` — saytı və admin paneli `http://127.0.0.1:8080` ünvanında açır. İlk admin hesabı üçün `ADMIN_PASSWORD` mühit dəyişənini təyin edin.
+
+**Ehtiyat nüsxə:** cPanel → **Backup** və ya FTP ilə `jayhuntech/data/registrations.sqlite` faylını endirin.
+
+## Admin paneli serverə yerləşdirmək (Node.js / Docker)
 
 Server aldıqda **eyni tətbiqi və lokal ehtiyat nüsxəni** istifadə edin. `Dockerfile`, `compose.yaml` və `deploy/Caddyfile` qalıcı verilənlər bazası, domen və avtomatik HTTPS üçün hazırdır. Lokal HTTP ayarları serverə ötürülmür; server rejimində giriş HTTPS tələb edir.
 

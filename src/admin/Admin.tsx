@@ -59,8 +59,8 @@ const navigation: { id: Section; label: string; icon: typeof Users }[] = [
 
 const emptyOptions: Row = { courses: [], groups: [], students: [], exams: [] };
 
-// Render linki. Sondakı "/" avtomatik silinir, ona görə yazsanız da problem olmaz.
-const API_BASE = 'https://ceyhunlms.onrender.com'.replace(/\/+$/, '');
+// Admin API eyni domendən işləyir: cookie SameSite=Strict, CORS yoxdur, Origin yoxlanılır.
+const API_BASE = '';
 
 const TABLE_HEADS: Record<string, string[]> = {
   registrations: ['Tələbə', 'Kurs', 'Əlaqə', 'Status'],
