@@ -56,6 +56,8 @@ const navigation: { id: Section; label: string; icon: typeof Users }[] = [
   { id: 'faqs', label: 'Suallar və cavablar', icon: CircleHelp },
 ];
 const emptyOptions: Row = { courses: [], groups: [], students: [], exams: [] };
+// BURAYA ÖZ DƏQİQ RENDER LİNKİNİZİ YAZIN (sonunda / işarəsi olmasın):
+const API_BASE = 'https://ceyhunlms.onrender.com/';
 function Badge({ value }: { value: string }) {
   return <span className={`ad-badge ad-badge-${value}`}>{labels[value] || value}</span>;
 }
@@ -213,10 +215,10 @@ export default function Admin() {
     [studentId, setStudentId] = useState(''),
     [memberError, setMemberError] = useState('');
 
-  async function request(path: string, init: RequestInit = {}) {
-    const response = await fetch('/api/admin' + path, {
+async function request(path: string, init: RequestInit = {}) {
+    const response = await fetch(`${API_BASE}/api/admin${path}`, {
       ...init,
-      credentials: 'same-origin',
+      credentials: 'include', // 'same-origin' əvəzinə 'include' olmalıdır!
       headers: {
         ...(init.body && !(init.body instanceof File)
           ? { 'Content-Type': 'application/json' }
@@ -225,6 +227,25 @@ export default function Admin() {
         ...init.headers,
       },
     });
+    const result = await response.json();
+    if (!response.ok) {
+      if (response.status === 401) {
+        setSession(null);
+        setLoginError('Sessiya bitib. Yenidən daxil olun.');
+      }
+      throw new Error(result.error || 'Əməliyyat tamamlanmadı.');
+    }
+    return result;
+  }
+  useEffect(() => {
+    document.title = 'Jayhun Tech — İdarə paneli';
+    fetch(`${API_BASE}/api/admin/session`, { credentials: 'include' })
+      .then(async (r) => {
+        if (r.ok) setSession(await r.json());
+      })
+      .catch(() => setLoginError('Serverlə əlaqə qurulmadı.'))
+      .finally(() => setChecking(false));
+  }, []);
     const result = await response.json();
     if (!response.ok) {
       if (response.status === 401) {
@@ -340,14 +361,15 @@ export default function Admin() {
     setPage(1);
     setError('');
   }
-  async function login(event: FormEvent<HTMLFormElement>) {
+async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setLoginError('');
     const values = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch(`${API_BASE}/api/admin/login`, {
         method: 'POST',
+        credentials: 'include', // Cookie-nin yadda qalması üçün vacibdir!
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
