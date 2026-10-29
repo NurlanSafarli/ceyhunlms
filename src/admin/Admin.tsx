@@ -57,7 +57,7 @@ const navigation: { id: Section; label: string; icon: typeof Users }[] = [
 ];
 const emptyOptions: Row = { courses: [], groups: [], students: [], exams: [] };
 // BURAYA ÖZ DƏQİQ RENDER LİNKİNİZİ YAZIN (sonunda / işarəsi olmasın):
-const API_BASE = 'https://ceyhunlms.onrender.com/';
+const API_BASE = 'https://ceyhunlms.onrender.com';
 function Badge({ value }: { value: string }) {
   return <span className={`ad-badge ad-badge-${value}`}>{labels[value] || value}</span>;
 }
@@ -215,10 +215,10 @@ export default function Admin() {
     [studentId, setStudentId] = useState(''),
     [memberError, setMemberError] = useState('');
 
-async function request(path: string, init: RequestInit = {}) {
+  async function request(path: string, init: RequestInit = {}) {
     const response = await fetch(`${API_BASE}/api/admin${path}`, {
       ...init,
-      credentials: 'include', // 'same-origin' əvəzinə 'include' olmalıdır!
+      credentials: 'include',
       headers: {
         ...(init.body && !(init.body instanceof File)
           ? { 'Content-Type': 'application/json' }
@@ -227,6 +227,26 @@ async function request(path: string, init: RequestInit = {}) {
         ...init.headers,
       },
     });
+    const result = await response.json();
+    if (!response.ok) {
+      if (response.status === 401) {
+        setSession(null);
+        setLoginError('Sessiya bitib. Yenidən daxil olun.');
+      }
+      throw new Error(result.error || 'Əməliyyat tamamlanmadı.');
+    }
+    return result;
+  }
+
+  useEffect(() => {
+    document.title = 'Jayhun Tech — İdarə paneli';
+    fetch(`${API_BASE}/api/admin/session`, { credentials: 'include' })
+      .then(async (r) => {
+        if (r.ok) setSession(await r.json());
+      })
+      .catch(() => setLoginError('Serverlə əlaqə qurulmadı.'))
+      .finally(() => setChecking(false));
+  }, []);
     const result = await response.json();
     if (!response.ok) {
       if (response.status === 401) {
@@ -246,15 +266,7 @@ async function request(path: string, init: RequestInit = {}) {
       .catch(() => setLoginError('Serverlə əlaqə qurulmadı.'))
       .finally(() => setChecking(false));
   }, []);
-    const result = await response.json();
-    if (!response.ok) {
-      if (response.status === 401) {
-        setSession(null);
-        setLoginError('Sessiya bitib. Yenidən daxil olun.');
-      }
-      throw new Error(result.error || 'Əməliyyat tamamlanmadı.');
-    }
-    return result;
+
   }
   useEffect(() => {
     document.title = 'Jayhun Tech — İdarə paneli';
@@ -892,7 +904,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                         </select>
                       )}
                       {collection === 'registrations' && (
-                        <a className="ad-btn ad-secondary" href="${API_BASE}/api/admin/registrations.csv">
+                       <a className="ad-btn ad-secondary" href={`${API_BASE}/api/admin/registrations.csv`}>
                           <ArrowDownToLine size={15} /> CSV ixrac
                         </a>
                       )}
