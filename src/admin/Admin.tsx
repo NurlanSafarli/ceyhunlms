@@ -44,6 +44,7 @@ import {
 import './admin.css';
 
 type Session = { username: string; csrfToken: string };
+
 const navigation: { id: Section; label: string; icon: typeof Users }[] = [
   { id: 'dashboard', label: 'İcmal', icon: LayoutDashboard },
   { id: 'registrations', label: 'Müraciətlər', icon: Users },
@@ -55,12 +56,38 @@ const navigation: { id: Section; label: string; icon: typeof Users }[] = [
   { id: 'settings', label: 'Sayt məzmunu', icon: Settings2 },
   { id: 'faqs', label: 'Suallar və cavablar', icon: CircleHelp },
 ];
+
 const emptyOptions: Row = { courses: [], groups: [], students: [], exams: [] };
-// BURAYA ÖZ DƏQİQ RENDER LİNKİNİZİ YAZIN (sonunda / işarəsi olmasın):
-const API_BASE = 'https://ceyhunlms.onrender.com';
+
+// Render linki. Sondakı "/" avtomatik silinir, ona görə yazsanız da problem olmaz.
+const API_BASE = 'https://ceyhunlms.onrender.com'.replace(/\/+$/, '');
+
+const TABLE_HEADS: Record<string, string[]> = {
+  registrations: ['Tələbə', 'Kurs', 'Əlaqə', 'Status'],
+  courses: ['Kurs', 'Müddət', 'Sillabus', 'Yayım'],
+  groups: ['Qrup', 'Kurs', 'Tələbələr', 'Status'],
+  materials: ['Vəsait', 'Qrup', 'Növ', 'Fayl'],
+  exams: ['İmtahan', 'Qrup', 'Tarix / saat', 'Status'],
+  results: ['Tələbə', 'İmtahan', 'Bal', 'Nəticə'],
+  faqs: ['Sual', 'Sıralama', 'Yayım'],
+};
+
+const STATUS_FILTER_SECTIONS = ['registrations', 'groups', 'exams'];
+
+const rowLabel = (row: Row): string => row.name || row.title || row.question || row.student_name;
+
+async function readJson(response: Response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
 function Badge({ value }: { value: string }) {
   return <span className={`ad-badge ad-badge-${value}`}>{labels[value] || value}</span>;
 }
+
 function Modal({
   title,
   onClose,
@@ -97,6 +124,7 @@ function Modal({
     </dialog>
   );
 }
+
 function FieldInput({
   field,
   value,
@@ -110,8 +138,8 @@ function FieldInput({
   choices?: [string, string][];
   disabled?: boolean;
 }) {
-  const id = `ad-field-${field.key}`,
-    type = field.type || 'text';
+  const id = `ad-field-${field.key}`;
+  const type = field.type || 'text';
   if (type === 'checkbox')
     return (
       <label className="ad-checkbox">
@@ -135,8 +163,8 @@ function FieldInput({
             disabled={disabled}
           >
             <option value="">Seçin</option>
-            {(field.options || choices).map(([id, name]) => (
-              <option key={id} value={id}>
+            {(field.options || choices).map(([optId, name]) => (
+              <option key={optId} value={optId}>
                 {name}
               </option>
             ))}
@@ -179,41 +207,114 @@ function FieldInput({
   );
 }
 
+function ModulesEditor({
+  modules,
+  onChange,
+}: {
+  modules: Row[];
+  onChange: (modules: Row[]) => void;
+}) {
+  const patch = (i: number, key: string, value: any) =>
+    onChange(modules.map((m, n) => (n === i ? { ...m, [key]: value } : m)));
+  const moduleFields: Partial<Field>[] = [
+    { key: 'title', label: 'Modulun adı', required: true },
+    { key: 'duration', label: 'Həftə / müddət' },
+    { key: 'topics', label: 'Mövzular (hər sətirdə biri)', type: 'textarea' },
+    { key: 'lab', label: 'Praktiki tapşırıq', type: 'textarea' },
+  ];
+  return (
+    <div className="ad-modules-editor">
+      <div className="ad-subheading">
+        <h3>Sillabus modulları</h3>
+        <button
+          className="ad-btn ad-secondary"
+          type="button"
+          onClick={() => onChange([...modules, { title: '', duration: '', topics: [], lab: '' }])}
+        >
+          <Plus size={15} />
+          Modul əlavə et
+        </button>
+      </div>
+      {modules.map((module, i) => (
+        <fieldset className="ad-module-editor" key={i}>
+          <legend>Modul {i + 1}</legend>
+          <div className="ad-module-tools">
+            <button
+              className="ad-icon"
+              type="button"
+              aria-label={`Modul ${i + 1} yuxarı`}
+              disabled={i === 0}
+              onClick={() => {
+                const next = [...modules];
+                [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                onChange(next);
+              }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              className="ad-icon ad-danger-icon"
+              type="button"
+              aria-label={`Modul ${i + 1} sil`}
+              onClick={() => onChange(modules.filter((_, n) => n !== i))}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+          {moduleFields.map((field) => {
+            const key = field.key as string;
+            return (
+              <FieldInput
+                key={key}
+                field={{ ...field, key: `module-${i}-${key}` } as Field}
+                value={key === 'topics' ? (module.topics || []).join('\n') : module[key]}
+                onChange={(v) => patch(i, key, key === 'topics' ? v.split('\n') : v)}
+              />
+            );
+          })}
+        </fieldset>
+      ))}
+    </div>
+  );
+}
+
 export default function Admin() {
-  const [session, setSession] = useState<Session | null>(null),
-    [checking, setChecking] = useState(true),
-    [loginError, setLoginError] = useState(''),
-    [busy, setBusy] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [loginError, setLoginError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [section, setSection] = useState<Section>(
     () => navigation.find((n) => n.id === location.hash.slice(1))?.id || 'dashboard',
   );
-  const [menu, setMenu] = useState(false),
-    [search, setSearch] = useState(''),
-    [query, setQuery] = useState(''),
-    [filter, setFilter] = useState(''),
-    [page, setPage] = useState(1),
-    [epoch, setEpoch] = useState(0);
+  const [menu, setMenu] = useState(false);
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [epoch, setEpoch] = useState(0);
   const [data, setData] = useState<{ items: Row[]; total: number; pageSize: number }>({
-      items: [],
-      total: 0,
-      pageSize: 20,
-    }),
-    [dashboard, setDashboard] = useState<Row | null>(null),
-    [options, setOptions] = useState<Row>(emptyOptions),
-    [settings, setSettings] = useState<Row>({}),
-    [loading, setLoading] = useState(false),
-    [error, setError] = useState(''),
-    [notice, setNotice] = useState('');
-  const [editor, setEditor] = useState<{ type: Collection; id?: string } | null>(null),
-    [draft, setDraft] = useState<Row>({}),
-    [file, setFile] = useState<File | null>(null),
-    [editError, setEditError] = useState(''),
-    [saving, setSaving] = useState(false),
-    [resultMembers, setResultMembers] = useState<Row[]>([]);
-  const [group, setGroup] = useState<Row | null>(null),
-    [members, setMembers] = useState<Row[]>([]),
-    [studentId, setStudentId] = useState(''),
-    [memberError, setMemberError] = useState('');
+    items: [],
+    total: 0,
+    pageSize: 20,
+  });
+  const [dashboard, setDashboard] = useState<Row | null>(null);
+  const [options, setOptions] = useState<Row>(emptyOptions);
+  const [settings, setSettings] = useState<Row>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [editor, setEditor] = useState<{ type: Collection; id?: string } | null>(null);
+  const [draft, setDraft] = useState<Row>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [editError, setEditError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [resultMembers, setResultMembers] = useState<Row[]>([]);
+  const [group, setGroup] = useState<Row | null>(null);
+  const [members, setMembers] = useState<Row[]>([]);
+  const [studentId, setStudentId] = useState('');
+  const [memberError, setMemberError] = useState('');
+
+  const pageSize = data.pageSize || 20;
 
   async function request(path: string, init: RequestInit = {}) {
     const response = await fetch(`${API_BASE}/api/admin${path}`, {
@@ -227,7 +328,7 @@ export default function Admin() {
         ...init.headers,
       },
     });
-    const result = await response.json();
+    const result = await readJson(response);
     if (!response.ok) {
       if (response.status === 401) {
         setSession(null);
@@ -238,25 +339,7 @@ export default function Admin() {
     return result;
   }
 
-  useEffect(() => {
-    document.title = 'Jayhun Tech — İdarə paneli';
-    fetch(`${API_BASE}/api/admin/session`, { credentials: 'include' })
-      .then(async (r) => {
-        if (r.ok) setSession(await r.json());
-      })
-      .catch(() => setLoginError('Serverlə əlaqə qurulmadı.'))
-      .finally(() => setChecking(false));
-  }, []);
-    const result = await response.json();
-    if (!response.ok) {
-      if (response.status === 401) {
-        setSession(null);
-        setLoginError('Sessiya bitib. Yenidən daxil olun.');
-      }
-      throw new Error(result.error || 'Əməliyyat tamamlanmadı.');
-    }
-    return result;
-  }
+  // Sessiyanı yoxla
   useEffect(() => {
     document.title = 'Jayhun Tech — İdarə paneli';
     fetch(`${API_BASE}/api/admin/session`, { credentials: 'include' })
@@ -267,16 +350,7 @@ export default function Admin() {
       .finally(() => setChecking(false));
   }, []);
 
-  }
-  useEffect(() => {
-    document.title = 'Jayhun Tech — İdarə paneli';
-    fetch('/api/admin/session')
-      .then(async (r) => {
-        if (r.ok) setSession(await r.json());
-      })
-      .catch(() => setLoginError('Serverlə əlaqə qurulmadı.'))
-      .finally(() => setChecking(false));
-  }, []);
+  // Axtarış debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(search);
@@ -284,6 +358,8 @@ export default function Admin() {
     }, 250);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Brauzerin geri/irəli düymələri (hash)
   useEffect(() => {
     const handle = () => {
       const id = navigation.find((n) => n.id === location.hash.slice(1))?.id;
@@ -297,6 +373,8 @@ export default function Admin() {
     window.addEventListener('hashchange', handle);
     return () => window.removeEventListener('hashchange', handle);
   }, []);
+
+  // Seçim siyahıları (kurslar, qruplar, tələbələr, imtahanlar)
   useEffect(() => {
     if (!session) return;
     let active = true;
@@ -311,6 +389,8 @@ export default function Admin() {
       active = false;
     };
   }, [session, epoch]);
+
+  // Bölmənin məlumatları
   useEffect(() => {
     if (!session) return;
     let active = true;
@@ -321,7 +401,7 @@ export default function Admin() {
         ? '/dashboard'
         : section === 'settings'
           ? '/settings'
-          : `/${section}?q=${encodeURIComponent(query)}&page=${page}&status=${filter}`;
+          : `/${section}?q=${encodeURIComponent(query)}&page=${page}&status=${encodeURIComponent(filter)}`;
     request(path)
       .then((r) => {
         if (!active) return;
@@ -339,6 +419,8 @@ export default function Admin() {
       active = false;
     };
   }, [session, section, query, page, filter, epoch]);
+
+  // Nəticə formu: imtahanın qrupundakı tələbələr
   useEffect(() => {
     if (editor?.type !== 'results' || !draft.exam_id) {
       setResultMembers([]);
@@ -358,11 +440,16 @@ export default function Admin() {
       active = false;
     };
   }, [editor?.type, draft.exam_id, options]);
+
+  // Bildirişin avtomatik bağlanması
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(''), 5000);
     return () => clearTimeout(timer);
   }, [notice]);
+
+  const refresh = () => setEpoch((e) => e + 1);
+
   function navigate(id: Section) {
     setSection(id);
     location.hash = id;
@@ -373,7 +460,8 @@ export default function Admin() {
     setPage(1);
     setError('');
   }
-async function login(event: FormEvent<HTMLFormElement>) {
+
+  async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setLoginError('');
@@ -381,19 +469,35 @@ async function login(event: FormEvent<HTMLFormElement>) {
     try {
       const response = await fetch(`${API_BASE}/api/admin/login`, {
         method: 'POST',
-        credentials: 'include', // Cookie-nin yadda qalması üçün vacibdir!
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
+      const result = await readJson(response);
+      if (!response.ok) throw new Error(result.error || 'Daxil olmaq mümkün olmadı.');
       setSession(result);
     } catch (e) {
-      setLoginError(e instanceof Error ? e.message : 'Daxil olmaq mümkün olmadı.');
+      setLoginError(
+        e instanceof TypeError
+          ? 'Serverlə əlaqə qurulmadı.'
+          : e instanceof Error
+            ? e.message
+            : 'Daxil olmaq mümkün olmadı.',
+      );
     } finally {
       setBusy(false);
     }
   }
+
+  async function logout() {
+    try {
+      await request('/logout', { method: 'POST' });
+      setSession(null);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   function openEditor(type: Collection, row?: Row) {
     setDraft(
       row
@@ -407,10 +511,11 @@ async function login(event: FormEvent<HTMLFormElement>) {
     setFile(null);
     setEditError('');
   }
+
   function update(key: string, value: any) {
     setDraft((d) => ({ ...d, [key]: value }));
   }
-  const refresh = () => setEpoch((e) => e + 1);
+
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!editor) return;
@@ -450,13 +555,9 @@ async function login(event: FormEvent<HTMLFormElement>) {
       setSaving(false);
     }
   }
+
   async function remove(type: Collection, row: Row) {
-    if (
-      !window.confirm(
-        `“${row.name || row.title || row.question || row.student_name}” silinsin? Bu əməliyyat geri qaytarılmır.`,
-      )
-    )
-      return;
+    if (!window.confirm(`“${rowLabel(row)}” silinsin? Bu əməliyyat geri qaytarılmır.`)) return;
     try {
       await request(`/${type}/${row.id}`, { method: 'DELETE' });
       setNotice('Məlumat silindi.');
@@ -466,6 +567,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
       setError((e as Error).message);
     }
   }
+
   async function manageMembers(row: Row) {
     setGroup(row);
     setStudentId('');
@@ -477,6 +579,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
       setMemberError((e as Error).message);
     }
   }
+
   async function addMember(event: FormEvent) {
     event.preventDefault();
     if (!group || !studentId) return;
@@ -496,6 +599,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
       setSaving(false);
     }
   }
+
   async function removeMember(id: string) {
     if (!group || !window.confirm('Tələbə bu qrupdan çıxarılsın?')) return;
     try {
@@ -506,6 +610,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
       setMemberError((e as Error).message);
     }
   }
+
   async function saveSettings(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -519,15 +624,165 @@ async function login(event: FormEvent<HTMLFormElement>) {
       setSaving(false);
     }
   }
+
+  async function removeMaterialFile() {
+    if (!editor?.id || !window.confirm('Əlavə edilmiş fayl silinsin?')) return;
+    try {
+      await request(`/materials/${editor.id}/file`, { method: 'DELETE' });
+      update('file_name', null);
+      refresh();
+    } catch (e) {
+      setEditError((e as Error).message);
+    }
+  }
+
   function fieldChoices(field: Field): [string, string][] {
     if (!field.source) return [];
-    const rows = field.source === 'students' ? resultMembers : options[field.source] || [];
-    const choices: [string, string][] = rows.map((r: Row) => [
+    const rows: Row[] = field.source === 'students' ? resultMembers : options[field.source] || [];
+    const choices: [string, string][] = rows.map((r) => [
       r.id,
       r.name || `${r.title} · ${r.group_name}`,
     ]);
     if (field.key === 'course') choices.push(['undecided', 'Seçimdə kömək lazımdır']);
     return choices;
+  }
+
+  function renderCells(collection: Collection, row: Row) {
+    switch (collection) {
+      case 'registrations':
+        return (
+          <>
+            <td>
+              <strong>{row.name}</strong>
+              <small>
+                {formatDate(row.created_at)} · {labels[row.source]}
+              </small>
+            </td>
+            <td>{row.course_name || 'Seçim gözləyir'}</td>
+            <td>
+              <a href={`mailto:${row.email}`}>{row.email}</a>
+              <small>{row.phone}</small>
+            </td>
+            <td>
+              <Badge value={row.status} />
+            </td>
+          </>
+        );
+      case 'courses':
+        return (
+          <>
+            <td>
+              <strong>{row.name}</strong>
+              <small>{row.level}</small>
+            </td>
+            <td>{row.duration}</td>
+            <td>{(row.modules || []).length} modul</td>
+            <td>
+              <span className={`ad-badge ${row.published ? 'ad-badge-active' : ''}`}>
+                {row.published ? 'Yayımlanır' : 'Gizlidir'}
+              </span>
+            </td>
+          </>
+        );
+      case 'groups':
+        return (
+          <>
+            <td>
+              <strong>{row.name}</strong>
+              <small>{row.schedule || 'Cədvəl təyin edilməyib'}</small>
+            </td>
+            <td>{row.course_name}</td>
+            <td>
+              <button className="ad-member-link" onClick={() => manageMembers(row)}>
+                <Users size={14} />
+                {row.member_count} / {row.capacity}
+              </button>
+            </td>
+            <td>
+              <Badge value={row.status} />
+            </td>
+          </>
+        );
+      case 'materials':
+        return (
+          <>
+            <td>
+              <strong>{row.title}</strong>
+              {row.url && (
+                <a
+                  className="ad-material-url"
+                  href={row.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Linki aç <ArrowUpRight size={12} />
+                </a>
+              )}
+            </td>
+            <td>{row.group_name || 'Ümumi kitabxana'}</td>
+            <td>
+              <Badge value={row.type} />
+            </td>
+            <td>
+              {row.file_name ? (
+                <a className="ad-text-btn" href={`${API_BASE}/api/admin/materials/${row.id}/file`}>
+                  <ArrowDownToLine size={14} />
+                  {row.file_name}
+                </a>
+              ) : (
+                '—'
+              )}
+            </td>
+          </>
+        );
+      case 'exams':
+        return (
+          <>
+            <td>
+              <strong>{row.title}</strong>
+              <small>
+                {row.duration} dəqiqə · {row.max_score} bal
+              </small>
+            </td>
+            <td>{row.group_name}</td>
+            <td>{formatDate(row.scheduled_at)}</td>
+            <td>
+              <Badge value={row.status} />
+            </td>
+          </>
+        );
+      case 'results':
+        return (
+          <>
+            <td>
+              <strong>{row.student_name}</strong>
+              <small>{row.group_name}</small>
+            </td>
+            <td>{row.exam_title}</td>
+            <td>
+              <strong>
+                {row.score ?? '—'} <span className="ad-muted">/ {row.max_score}</span>
+              </strong>
+            </td>
+            <td>
+              <Badge value={row.outcome} />
+            </td>
+          </>
+        );
+      default:
+        return (
+          <>
+            <td>
+              <strong>{row.question}</strong>
+              <small className="ad-truncate">{row.answer}</small>
+            </td>
+            <td>{row.sort_order}</td>
+            <td>
+              <Badge value={row.published ? 'active' : 'archived'} />
+            </td>
+          </>
+        );
+    }
   }
 
   if (checking)
@@ -536,6 +791,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
         <span className="ad-spinner" /> Panel yüklənir…
       </div>
     );
+
   if (!session)
     return (
       <div className="ad-login">
@@ -589,9 +845,44 @@ async function login(event: FormEvent<HTMLFormElement>) {
         <span className="ad-login-footer">Jayhun Tech · Tədrisin idarə olunması</span>
       </div>
     );
+
   const current = navigation.find((n) => n.id === section)!;
   const Icon = current.icon;
   const collection = section !== 'dashboard' && section !== 'settings' ? section : null;
+
+  const stats = dashboard
+    ? [
+        {
+          label: 'Ümumi müraciət',
+          value: dashboard.registrations,
+          detail: `${dashboard.newRegistrations} yeni müraciət`,
+          icon: Users,
+          to: 'registrations',
+        },
+        {
+          label: 'Aktiv dərs qrupu',
+          value: dashboard.groups,
+          detail: 'Tədrisi davam edən qruplar',
+          icon: GraduationCap,
+          to: 'groups',
+        },
+        {
+          label: 'Yayımlanan kurs',
+          value: dashboard.courses,
+          detail: 'Saytda görünən istiqamətlər',
+          icon: BookOpen,
+          to: 'courses',
+        },
+        {
+          label: 'Qiymətləndirmə',
+          value: dashboard.results,
+          detail: 'Qeydə alınmış nəticələr',
+          icon: ClipboardList,
+          to: 'results',
+        },
+      ]
+    : [];
+
   return (
     <div className="ad-app">
       <aside className={`ad-sidebar ${menu ? 'ad-sidebar-open' : ''}`}>
@@ -631,18 +922,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
               {session.username}
               <small>Administrator</small>
             </span>
-            <button
-              className="ad-icon"
-              aria-label="Hesabdan çıx"
-              onClick={async () => {
-                try {
-                  await request('/logout', { method: 'POST' });
-                  setSession(null);
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }}
-            >
+            <button className="ad-icon" aria-label="Hesabdan çıx" onClick={logout}>
               <LogOut size={18} />
             </button>
           </div>
@@ -732,36 +1012,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
               {section === 'dashboard' && dashboard && (
                 <>
                   <div className="ad-stats">
-                    {[
-                      {
-                        label: 'Ümumi müraciət',
-                        value: dashboard.registrations,
-                        detail: `${dashboard.newRegistrations} yeni müraciət`,
-                        icon: Users,
-                        to: 'registrations',
-                      },
-                      {
-                        label: 'Aktiv dərs qrupu',
-                        value: dashboard.groups,
-                        detail: 'Tədrisi davam edən qruplar',
-                        icon: GraduationCap,
-                        to: 'groups',
-                      },
-                      {
-                        label: 'Yayımlanan kurs',
-                        value: dashboard.courses,
-                        detail: 'Saytda görünən istiqamətlər',
-                        icon: BookOpen,
-                        to: 'courses',
-                      },
-                      {
-                        label: 'Qiymətləndirmə',
-                        value: dashboard.results,
-                        detail: 'Qeydə alınmış nəticələr',
-                        icon: ClipboardList,
-                        to: 'results',
-                      },
-                    ].map((s, i) => (
+                    {stats.map((s, i) => (
                       <button
                         key={s.label}
                         className={`ad-stat ${i === 0 ? 'ad-stat-featured' : ''}`}
@@ -884,7 +1135,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                       />
                     </div>
                     <div className="ad-toolbar-right">
-                      {['registrations', 'groups', 'exams'].includes(collection) && (
+                      {STATUS_FILTER_SECTIONS.includes(collection) && (
                         <select
                           aria-label="Status filtri"
                           value={filter}
@@ -904,7 +1155,10 @@ async function login(event: FormEvent<HTMLFormElement>) {
                         </select>
                       )}
                       {collection === 'registrations' && (
-                       <a className="ad-btn ad-secondary" href={`${API_BASE}/api/admin/registrations.csv`}>
+                        <a
+                          className="ad-btn ad-secondary"
+                          href={`${API_BASE}/api/admin/registrations.csv`}
+                        >
                           <ArrowDownToLine size={15} /> CSV ixrac
                         </a>
                       )}
@@ -916,20 +1170,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                       <table className="ad-table">
                         <thead>
                           <tr>
-                            {(collection === 'registrations'
-                              ? ['Tələbə', 'Kurs', 'Əlaqə', 'Status']
-                              : collection === 'courses'
-                                ? ['Kurs', 'Müddət', 'Sillabus', 'Yayım']
-                                : collection === 'groups'
-                                  ? ['Qrup', 'Kurs', 'Tələbələr', 'Status']
-                                  : collection === 'materials'
-                                    ? ['Vəsait', 'Qrup', 'Növ', 'Fayl']
-                                    : collection === 'exams'
-                                      ? ['İmtahan', 'Qrup', 'Tarix / saat', 'Status']
-                                      : collection === 'results'
-                                        ? ['Tələbə', 'İmtahan', 'Bal', 'Nəticə']
-                                        : ['Sual', 'Sıralama', 'Yayım']
-                            ).map((h) => (
+                            {TABLE_HEADS[collection].map((h) => (
                               <th key={h}>{h}</th>
                             ))}
                             <th className="ad-actions-heading">Əməliyyatlar</th>
@@ -938,141 +1179,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                         <tbody>
                           {data.items.map((row) => (
                             <tr key={row.id}>
-                              {collection === 'registrations' && (
-                                <>
-                                  <td>
-                                    <strong>{row.name}</strong>
-                                    <small>
-                                      {formatDate(row.created_at)} · {labels[row.source]}
-                                    </small>
-                                  </td>
-                                  <td>{row.course_name || 'Seçim gözləyir'}</td>
-                                  <td>
-                                    <a href={`mailto:${row.email}`}>{row.email}</a>
-                                    <small>{row.phone}</small>
-                                  </td>
-                                  <td>
-                                    <Badge value={row.status} />
-                                  </td>
-                                </>
-                              )}
-                              {collection === 'courses' && (
-                                <>
-                                  <td>
-                                    <strong>{row.name}</strong>
-                                    <small>{row.level}</small>
-                                  </td>
-                                  <td>{row.duration}</td>
-                                  <td>{row.modules.length} modul</td>
-                                  <td>
-                                    <span
-                                      className={`ad-badge ${row.published ? 'ad-badge-active' : ''}`}
-                                    >
-                                      {row.published ? 'Yayımlanır' : 'Gizlidir'}
-                                    </span>
-                                  </td>
-                                </>
-                              )}
-                              {collection === 'groups' && (
-                                <>
-                                  <td>
-                                    <strong>{row.name}</strong>
-                                    <small>{row.schedule || 'Cədvəl təyin edilməyib'}</small>
-                                  </td>
-                                  <td>{row.course_name}</td>
-                                  <td>
-                                    <button
-                                      className="ad-member-link"
-                                      onClick={() => manageMembers(row)}
-                                    >
-                                      <Users size={14} />
-                                      {row.member_count} / {row.capacity}
-                                    </button>
-                                  </td>
-                                  <td>
-                                    <Badge value={row.status} />
-                                  </td>
-                                </>
-                              )}
-                              {collection === 'materials' && (
-                                <>
-                                  <td>
-                                    <strong>{row.title}</strong>
-                                    {row.url && (
-                                      <a
-                                        className="ad-material-url"
-                                        href={row.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        Linki aç <ArrowUpRight size={12} />
-                                      </a>
-                                    )}
-                                  </td>
-                                  <td>{row.group_name || 'Ümumi kitabxana'}</td>
-                                  <td>
-                                    <Badge value={row.type} />
-                                  </td>
-                                  <td>
-                                    {row.file_name ? (
-                                      <a
-                                        className="ad-text-btn"
-                                        href={`${API_BASE}/api/admin/materials/${row.id}/file`}
-                                      >
-                                        <ArrowDownToLine size={14} />
-                                        {row.file_name}
-                                      </a>
-                                    ) : (
-                                      '—'
-                                    )}
-                                  </td>
-                                </>
-                              )}
-                              {collection === 'exams' && (
-                                <>
-                                  <td>
-                                    <strong>{row.title}</strong>
-                                    <small>
-                                      {row.duration} dəqiqə · {row.max_score} bal
-                                    </small>
-                                  </td>
-                                  <td>{row.group_name}</td>
-                                  <td>{formatDate(row.scheduled_at)}</td>
-                                  <td>
-                                    <Badge value={row.status} />
-                                  </td>
-                                </>
-                              )}
-                              {collection === 'results' && (
-                                <>
-                                  <td>
-                                    <strong>{row.student_name}</strong>
-                                    <small>{row.group_name}</small>
-                                  </td>
-                                  <td>{row.exam_title}</td>
-                                  <td>
-                                    <strong>
-                                      {row.score ?? '—'}{' '}
-                                      <span className="ad-muted">/ {row.max_score}</span>
-                                    </strong>
-                                  </td>
-                                  <td>
-                                    <Badge value={row.outcome} />
-                                  </td>
-                                </>
-                              )}
-                              {collection === 'faqs' && (
-                                <>
-                                  <td>
-                                    <strong>{row.question}</strong>
-                                    <small className="ad-truncate">{row.answer}</small>
-                                  </td>
-                                  <td>{row.sort_order}</td>
-                                  <td>
-                                    <Badge value={row.published ? 'active' : 'archived'} />
-                                  </td>
-                                </>
-                              )}
+                              {renderCells(collection, row)}
                               <td>
                                 <div className="ad-row-actions">
                                   {collection === 'groups' && (
@@ -1087,7 +1194,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                                   )}
                                   <button
                                     className="ad-icon"
-                                    aria-label={`${row.name || row.title || row.question || row.student_name} redaktə et`}
+                                    aria-label={`${rowLabel(row)} redaktə et`}
                                     title="Redaktə et"
                                     onClick={() => openEditor(collection, row)}
                                   >
@@ -1095,7 +1202,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                                   </button>
                                   <button
                                     className="ad-icon ad-danger-icon"
-                                    aria-label={`${row.name || row.title || row.question || row.student_name} sil`}
+                                    aria-label={`${rowLabel(row)} sil`}
                                     title="Sil"
                                     onClick={() => remove(collection, row)}
                                   >
@@ -1136,7 +1243,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                     <span>
                       {data.total === 0
                         ? '0'
-                        : `${(page - 1) * 20 + 1}–${Math.min(page * 20, data.total)}`}{' '}
+                        : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, data.total)}`}{' '}
                       / {data.total} qeyd
                     </span>
                     <div>
@@ -1151,7 +1258,7 @@ async function login(event: FormEvent<HTMLFormElement>) {
                       <span>Səhifə {page}</span>
                       <button
                         className="ad-icon"
-                        disabled={page * 20 >= data.total}
+                        disabled={page * pageSize >= data.total}
                         onClick={() => setPage((p) => p + 1)}
                         aria-label="Növbəti səhifə"
                       >
@@ -1163,28 +1270,28 @@ async function login(event: FormEvent<HTMLFormElement>) {
               )}
               {section === 'settings' && (
                 <form className="ad-settings-form" onSubmit={saveSettings}>
-                  {settingsSections.map((group) => (
-                    <section className="ad-panel ad-settings-section" key={group.title}>
+                  {settingsSections.map((sectionGroup) => (
+                    <section className="ad-panel ad-settings-section" key={sectionGroup.title}>
                       <div>
-                        <h2>{group.title}</h2>
-                        <p>{group.description}</p>
+                        <h2>{sectionGroup.title}</h2>
+                        <p>{sectionGroup.description}</p>
                       </div>
                       <div className="ad-form-grid">
-                        {group.fields.some((field) => field.key === 'brandName') && (
+                        {sectionGroup.fields.some((field) => field.key === 'brandName') && (
                           <LogoEditor
                             settings={settings}
                             setSettings={setSettings}
                             request={request}
                           />
                         )}
-                        {group.fields.some((field) => field.key === 'instructorName') && (
+                        {sectionGroup.fields.some((field) => field.key === 'instructorName') && (
                           <InstructorPhotoEditor
                             settings={settings}
                             setSettings={setSettings}
                             request={request}
                           />
                         )}
-                        {group.fields.map((field) => (
+                        {sectionGroup.fields.map((field) => (
                           <FieldInput
                             key={field.key}
                             field={field}
@@ -1242,84 +1349,10 @@ async function login(event: FormEvent<HTMLFormElement>) {
                 ))}
               </div>
               {editor.type === 'courses' && (
-                <div className="ad-modules-editor">
-                  <div className="ad-subheading">
-                    <h3>Sillabus modulları</h3>
-                    <button
-                      className="ad-btn ad-secondary"
-                      type="button"
-                      onClick={() =>
-                        update('modules', [
-                          ...draft.modules,
-                          { title: '', duration: '', topics: [], lab: '' },
-                        ])
-                      }
-                    >
-                      <Plus size={15} />
-                      Modul əlavə et
-                    </button>
-                  </div>
-                  {draft.modules.map((module: Row, i: number) => (
-                    <fieldset className="ad-module-editor" key={i}>
-                      <legend>Modul {i + 1}</legend>
-                      <div className="ad-module-tools">
-                        <button
-                          className="ad-icon"
-                          type="button"
-                          aria-label={`Modul ${i + 1} yuxarı`}
-                          disabled={i === 0}
-                          onClick={() => {
-                            const next = [...draft.modules];
-                            [next[i - 1], next[i]] = [next[i], next[i - 1]];
-                            update('modules', next);
-                          }}
-                        >
-                          <ChevronLeft size={16} />
-                        </button>
-                        <button
-                          className="ad-icon ad-danger-icon"
-                          type="button"
-                          aria-label={`Modul ${i + 1} sil`}
-                          onClick={() =>
-                            update(
-                              'modules',
-                              draft.modules.filter((_: Row, n: number) => n !== i),
-                            )
-                          }
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      {[
-                        { key: 'title', label: 'Modulun adı', required: true },
-                        { key: 'duration', label: 'Həftə / müddət' },
-                        { key: 'topics', label: 'Mövzular (hər sətirdə biri)', type: 'textarea' },
-                        { key: 'lab', label: 'Praktiki tapşırıq', type: 'textarea' },
-                      ].map((field) => (
-                        <FieldInput
-                          key={field.key}
-                          field={{ ...field, key: `module-${i}-${field.key}` } as Field}
-                          value={
-                            field.key === 'topics' ? module.topics.join('\n') : module[field.key]
-                          }
-                          onChange={(v) =>
-                            update(
-                              'modules',
-                              draft.modules.map((m: Row, n: number) =>
-                                n === i
-                                  ? {
-                                      ...m,
-                                      [field.key]: field.key === 'topics' ? v.split('\n') : v,
-                                    }
-                                  : m,
-                              ),
-                            )
-                          }
-                        />
-                      ))}
-                    </fieldset>
-                  ))}
-                </div>
+                <ModulesEditor
+                  modules={draft.modules || []}
+                  onChange={(modules) => update('modules', modules)}
+                />
               )}
               {editor.type === 'materials' && (
                 <div className="ad-file-field">
@@ -1340,22 +1373,15 @@ async function login(event: FormEvent<HTMLFormElement>) {
                       }
                     }}
                   />
-                  {draft.file_name && (
+                  {draft.file_name && editor.id && (
                     <div className="ad-current-file">
-                      <a href={`${API_BASE}/api/admin/materials/${editor.id}/file`}>{draft.file_name}</a>
+                      <a href={`${API_BASE}/api/admin/materials/${editor.id}/file`}>
+                        {draft.file_name}
+                      </a>
                       <button
                         className="ad-text-btn ad-danger-icon"
                         type="button"
-                        onClick={async () => {
-                          if (!confirm('Əlavə edilmiş fayl silinsin?')) return;
-                          try {
-                            await request(`/materials/${editor.id}/file`, { method: 'DELETE' });
-                            update('file_name', null);
-                            refresh();
-                          } catch (e) {
-                            setEditError((e as Error).message);
-                          }
-                        }}
+                        onClick={removeMaterialFile}
                       >
                         Faylı sil
                       </button>
