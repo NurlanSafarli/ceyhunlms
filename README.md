@@ -117,6 +117,12 @@ Canlı sayt cPanel paylaşımlı hostinqdə işləyir. Orada Node.js yoxdur, ona
 
 `jayhuntech/` qovluğu `public_html`-dən kənardadır, ona görə kod və baza internetdən görünmür.
 
+**Partnyor şirkətləri və loqolar:**
+
+Admin → **Sayt məzmunu → Partnyorlar və müştərilər** bölməsində şirkətin adını dəyişin, əlavə edin, sıralayın və ya gizlədin. Yeni şirkəti əvvəl **Məzmunu yadda saxla** ilə saxlayın, sonra **Şirkətin loqosu** sahəsindən PNG/JPG/WebP faylı seçin (maksimum 5 MB). Loqo dərhal saxlanır; eyni sahədən dəyişdirilə və silinə bilər. Şirkətin adının dəyişməsi loqonu silmir. Şirkət silinib məzmun saxlananda onun loqosu da silinir. Loqolar mövcud SQLite bazasında avtomatik yaradılan əlavə cədvəldə saxlanır; ayrıca uploads qovluğu və ya yeni hostinq xidməti lazım deyil.
+
+Qovluqların quruluşu və PHP backend saxlanır. `config.php` və mövcud baza əvəz edilməməlidir. GitHub Pages-də admin dəyişikliklərinin görünməsi üçün PHP API bağlantısı aktiv olmalıdır; PHP hostinqdəki sayt bunu birbaşa oxuyur.
+
 **Dəyişikliyi canlı sayta çıxarmaq:**
 
 1. Sayt (React) dəyişibsə: `npm run build`, sonra `dist/` içindəkiləri FTP ilə `public_html/`-ə yükləyin. Əvvəlcə `assets/`, ən sonda `index.html`.

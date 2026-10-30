@@ -24,6 +24,12 @@ export function ContentProvider({ children }: { children: ReactNode }) {
             settings: {
               ...settings,
               ...data.settings,
+              partners: (data.settings.partners || settings.partners).map(
+                (partner: import('./data').Partner) => ({
+                  ...partner,
+                  logoUrl: publicAssetUrl(partner.logoUrl || ''),
+                }),
+              ),
               logoUrl: publicAssetUrl(data.settings.logoUrl || ''),
               instructorPhotoUrl: publicAssetUrl(data.settings.instructorPhotoUrl || ''),
               instructorPhotos: (data.settings.instructorPhotos || []).map(

@@ -26,6 +26,7 @@ export function openDatabase(dbPath = defaultDbPath) {
     CREATE TABLE IF NOT EXISTS admin_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, admin_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS site_logo (id INTEGER PRIMARY KEY CHECK(id=1), data BLOB NOT NULL, version TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS partner_logos (id TEXT PRIMARY KEY, data BLOB NOT NULL, version TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS public_images (id TEXT PRIMARY KEY, data BLOB NOT NULL, version TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS site_settings (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS courses (id TEXT PRIMARY KEY, data TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);
@@ -105,6 +106,23 @@ export function readContent(db, publishedOnly = true) {
           : `/api/public/instructor-photos/${photo.id}?v=${photo.version}`,
     }));
   settings.instructorPhotoUrl = settings.instructorPhotos[0]?.url || '';
+  const partnerLogos = new Map(
+    db
+      .prepare('SELECT id,version FROM partner_logos')
+      .all()
+      .map((logo) => [logo.id, logo.version]),
+  );
+  settings.partners = settings.partners.map(({ logoUrl: _ignored, ...partner }) => {
+    const version = partnerLogos.get(partner.id);
+    return version
+      ? {
+          ...partner,
+          logoUrl: publishedOnly
+            ? `/api/public/partner-logos/${partner.id}?v=${version}`
+            : `/api/admin/partners/${partner.id}/logo?v=${version}`,
+        }
+      : partner;
+  });
   if (publishedOnly) settings.partners = settings.partners.filter((item) => item.published);
   if (publishedOnly) settings.solutions = settings.solutions.filter((item) => item.published);
   const where = publishedOnly ? ' WHERE published=1' : '';

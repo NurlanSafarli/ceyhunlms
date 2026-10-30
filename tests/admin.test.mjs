@@ -624,6 +624,86 @@ test('instructor photo upload validates images, survives backup and can be remov
   );
 });
 
+test('partner logos upload, survive edits, hide publicly and are removed with their company', async () => {
+  const partner = { id: 'logo-company', name: 'Loqolu şirkət', published: true };
+  await call('/api/admin/settings', {
+    method: 'PUT',
+    body: { partners: [partner], showPartners: true },
+  });
+  const endpoint = '/api/admin/partners/logo-company/logo';
+  const raw = await sharp({
+    create: {
+      width: 160,
+      height: 80,
+      channels: 4,
+      background: { r: 40, g: 90, b: 180, alpha: 0.5 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const upload = { method: 'PUT', raw, headers: { 'Content-Type': 'application/octet-stream' } };
+  assert.equal((await call(endpoint, { ...upload, auth: false })).status, 401);
+  assert.equal(
+    (await call(endpoint, { ...upload, headers: { ...upload.headers, 'X-CSRF-Token': 'wrong' } }))
+      .status,
+    403,
+  );
+  assert.equal((await call('/api/admin/partners/unknown/logo', upload)).status, 404);
+  const saved = await call(endpoint, upload);
+  assert.equal(saved.status, 200);
+  const adminUrl = saved.data.logoUrl;
+  assert.match(adminUrl, /^\/api\/admin\/partners\/logo-company\/logo\?v=/);
+  assert.equal((await call(adminUrl)).status, 200);
+  assert.equal((await call(adminUrl, { auth: false })).status, 401);
+  let content = (await call('/api/public/content', { auth: false })).data;
+  const publicUrl = content.settings.partners[0].logoUrl;
+  const image = await fetch(base + publicUrl);
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get('content-type'), 'image/webp');
+  assert.equal((await sharp(Buffer.from(await image.arrayBuffer())).metadata()).format, 'webp');
+  assert.equal(
+    (await call('/api/admin/settings')).data.instructorPhotos.some((p) => p.url === publicUrl),
+    false,
+  );
+  partner.name = 'Yenilənmiş şirkət';
+  await call('/api/admin/settings', {
+    method: 'PUT',
+    body: { partners: [{ ...partner, logoUrl: 'https://untrusted.example/logo.svg' }] },
+  });
+  content = (await call('/api/public/content', { auth: false })).data;
+  assert.equal(content.settings.partners[0].name, partner.name);
+  assert.equal(content.settings.partners[0].logoUrl, publicUrl);
+  assert.equal(
+    (await call(endpoint, { ...upload, raw: Buffer.from('<svg onload="alert(1)"/>') })).status,
+    400,
+  );
+  assert.equal(
+    (await call(endpoint, { ...upload, raw: Buffer.alloc(5 * 1024 * 1024 + 1) })).status,
+    413,
+  );
+  assert.equal((await call('/api/admin/settings')).data.partners[0].logoUrl, adminUrl);
+  const replaced = await call(endpoint, upload);
+  assert.notEqual(replaced.data.logoUrl, adminUrl);
+  partner.published = false;
+  await call('/api/admin/settings', { method: 'PUT', body: { partners: [partner] } });
+  assert.equal((await fetch(base + publicUrl)).status, 404);
+  assert.equal((await call(replaced.data.logoUrl)).status, 200);
+  partner.published = true;
+  await call('/api/admin/settings', {
+    method: 'PUT',
+    body: { partners: [partner], showPartners: false },
+  });
+  assert.equal((await fetch(base + publicUrl)).status, 404);
+  assert.equal((await call(endpoint, { method: 'DELETE' })).status, 200);
+  assert.equal((await call(endpoint)).status, 404);
+  assert.equal((await call('/api/admin/settings')).data.partners[0].logoUrl, undefined);
+  await call(endpoint, upload);
+  await call('/api/admin/settings', { method: 'PUT', body: { partners: [], showPartners: true } });
+  const reopened = openDatabase(dbPath);
+  assert.equal(reopened.prepare('SELECT COUNT(*) n FROM partner_logos').get().n, 0);
+  reopened.close();
+});
+
 test('partners persist, retain order and hide unpublished companies from public content', async () => {
   const partners = [
     { id: 'company-b', name: 'Şirkət B MMC', published: true },

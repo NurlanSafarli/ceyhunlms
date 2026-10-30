@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { test, expect } from '@playwright/test';
 
 test('technology strip moves, pauses and respects reduced motion without overflowing', async ({
@@ -60,6 +61,25 @@ test('admin adds, reorders, hides and deletes a partner with public results', as
   const company = editor
     .locator('fieldset')
     .filter({ has: page.locator('input[value="Yeni Test MMC"]') });
+  await company.getByLabel('Şirkətin loqosu', { exact: true }).setInputFiles({
+    name: 'company.png',
+    mimeType: 'image/png',
+    buffer: await sharp({ create: { width: 120, height: 60, channels: 4, background: '#2563eb' } })
+      .png()
+      .toBuffer(),
+  });
+  await expect(company.getByRole('status')).toHaveText('Loqo yükləndi.');
+  await expect(company.locator('.ad-partner-logo-preview')).toBeVisible();
+  await save();
+  const publicPage = await page.context().newPage();
+  await publicPage.goto('/');
+  const publicCompany = publicPage.locator('#partners li').filter({ hasText: 'Yeni Test MMC' });
+  await publicCompany.scrollIntoViewIfNeeded();
+  await expect(publicCompany.locator('img')).toBeVisible();
+  expect(
+    await publicCompany.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth),
+  ).toBeGreaterThan(0);
+  await publicPage.close();
   await company.getByLabel('Saytda yayımlansın').uncheck();
   await save();
   expect((await content()).some((p: { name: string }) => p.name === 'Yeni Test MMC')).toBe(false);

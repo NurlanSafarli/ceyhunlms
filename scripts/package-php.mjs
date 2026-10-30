@@ -27,7 +27,11 @@ Mövcud .htaccess-də xüsusi hostinq qaydalarını qoruyun.
 İlk quraşdırmada config.example.php əsasında config.php yaradın və admin parolunu təyin edin.
 İlk girişdən sonra konfiqurasiyadakı ilkin parolu silin.
 
-GitHub Pages saytı https://jayhuntech.az/api ünvanına qoşulur.
+Partnyorlar: Admin → Sayt məzmunu → Partnyorlar və müştərilər.
+Yeni şirkəti yadda saxlayın, sonra loqosunu seçin (PNG/JPG/WebP, maksimum 5 MB).
+PHP faylları və frontend birlikdə yenilənməlidir. Mövcud baza qorunur.
+
+GitHub Pages PHP_API_ORIGIN aktivləşdirildikdə PHP API-yə qoşulur.
 Admin: https://jayhuntech.az/admin
 Yoxlama: /api/health; /admin; Pages-dən qeydiyyat və şirkətlər siyahısı.
 `,

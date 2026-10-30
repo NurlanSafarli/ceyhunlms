@@ -345,7 +345,7 @@ export function LogoEditor({ settings, setSettings, request }: Props) {
   );
 }
 
-export function PartnersEditor({ settings, setSettings }: Pick<Props, 'settings' | 'setSettings'>) {
+export function PartnersEditor({ settings, setSettings, request }: Props) {
   const partners: Row[] = settings.partners || [];
   function update(index: number, key: string, value: unknown) {
     setSettings((s) => ({
@@ -418,6 +418,16 @@ export function PartnersEditor({ settings, setSettings }: Pick<Props, 'settings'
               />
               Saytda yayımlansın
             </label>
+            <PartnerLogoEditor
+              partner={item}
+              request={request}
+              onChange={(logoUrl) =>
+                setSettings((s) => ({
+                  ...s,
+                  partners: s.partners.map((p: Row) => (p.id === item.id ? { ...p, logoUrl } : p)),
+                }))
+              }
+            />
             <div className="ad-partner-actions">
               <button
                 type="button"
@@ -460,7 +470,7 @@ export function PartnersEditor({ settings, setSettings }: Pick<Props, 'settings'
               ...s,
               partners: [
                 ...(s.partners || []),
-                { id: crypto.randomUUID(), name: '', published: true },
+                { id: crypto.randomUUID(), name: '', published: true, isNew: true },
               ],
             }))
           }
@@ -469,5 +479,99 @@ export function PartnersEditor({ settings, setSettings }: Pick<Props, 'settings'
         </button>
       </div>
     </section>
+  );
+}
+
+function PartnerLogoEditor({
+  partner,
+  request,
+  onChange,
+}: {
+  partner: Row;
+  request: Props['request'];
+  onChange: (url: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  async function save(file?: File) {
+    setError('');
+    setMessage('');
+    if (
+      file &&
+      (file.size > 5 * 1024 * 1024 ||
+        !['image/png', 'image/jpeg', 'image/webp'].includes(file.type))
+    ) {
+      setError('PNG, JPG və ya WebP seçin. Maksimum ölçü: 5 MB.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await request(
+        `/partners/${encodeURIComponent(partner.id)}/logo`,
+        file
+          ? {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: file,
+            }
+          : { method: 'DELETE' },
+      );
+      onChange(result.logoUrl);
+      setMessage(file ? 'Loqo yükləndi.' : 'Loqo silindi.');
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="ad-partner-logo-editor">
+      {partner.logoUrl && (
+        <img
+          className="ad-partner-logo-preview"
+          src={partner.logoUrl}
+          alt={`${partner.name} — loqo önbaxışı`}
+        />
+      )}
+      <label className="ad-field" htmlFor={`partner-logo-${partner.id}`}>
+        Şirkətin loqosu
+      </label>
+      <input
+        id={`partner-logo-${partner.id}`}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        disabled={busy || partner.isNew}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) void save(file);
+        }}
+      />
+      <p>
+        {partner.isNew
+          ? 'Loqo əlavə etməzdən əvvəl yeni şirkəti “Məzmunu yadda saxla” düyməsi ilə saxlayın.'
+          : 'PNG, JPG və ya WebP, maksimum 5 MB. Loqo seçilən kimi saxlanır.'}
+      </p>
+      {partner.logoUrl && (
+        <button
+          type="button"
+          className="ad-btn ad-secondary"
+          disabled={busy}
+          onClick={() => {
+            if (window.confirm('Bu şirkətin loqosu silinsin?')) void save();
+          }}
+        >
+          Şirkətin loqosunu sil
+        </button>
+      )}
+      {busy && <p role="status">Loqo yüklənir…</p>}
+      {message && <p role="status">{message}</p>}
+      {error && (
+        <p className="ad-alert" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
