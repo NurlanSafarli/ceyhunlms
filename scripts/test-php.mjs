@@ -20,13 +20,18 @@ for (const name of ['api', 'admin']) {
     );
   writeFileSync(join(out, `${name}.test.mjs`), source);
 }
-const result = spawnSync(process.execPath, [
-  '--test',
-  '--test-concurrency=1',
-  join(out, 'api.test.mjs'),
-  join(out, 'admin.test.mjs'),
-], {
-  stdio: 'inherit',
-});
+const result = spawnSync(
+  process.execPath,
+  [
+    '--test',
+    '--test-concurrency=1',
+    join(out, 'api.test.mjs'),
+    join(out, 'admin.test.mjs'),
+    join(root, 'tests', 'php-cors.mjs'),
+  ],
+  {
+    stdio: 'inherit',
+  },
+);
 rmSync(out, { recursive: true, force: true });
 process.exit(result.status ?? 1);

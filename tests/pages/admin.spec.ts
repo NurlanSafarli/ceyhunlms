@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+const defaults = JSON.parse(
+  readFileSync(new URL('../../shared/default-content.json', import.meta.url), 'utf8'),
+);
 import { test, expect } from '@playwright/test';
 
 for (const route of ['admin', 'admin/', 'admin/index.html']) {
@@ -45,4 +49,12 @@ for (const route of ['admin', 'admin/', 'admin/index.html']) {
 
 test('Pages static server does not hide a missing route with SPA fallback', async ({ request }) => {
   expect((await request.get('./this-page-does-not-exist')).status()).toBe(404);
+});
+
+test.beforeEach(async ({ page }) => {
+  if (process.env.VITE_API_ORIGIN) {
+    await page.route(process.env.VITE_API_ORIGIN + '/api/public/content', (route) =>
+      route.fulfill({ json: defaults, headers: { 'access-control-allow-origin': '*' } }),
+    );
+  }
 });

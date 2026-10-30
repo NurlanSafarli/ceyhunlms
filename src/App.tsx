@@ -1,3 +1,4 @@
+import { apiUrl, staticOnly } from './api';
 import TechnologyStrip from './TechnologyStrip';
 import Partners from './Partners';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
@@ -39,7 +40,7 @@ import BrandIdentity from './BrandIdentity';
 import ContactDock from './ContactDock';
 import { usePreferences, useLocalizedView } from './preferences';
 
-const pagesMode = import.meta.env.MODE === 'pages';
+const pagesMode = staticOnly;
 const courseIcons: Record<string, typeof Headphones> = {
   'help-desk': Headphones,
   'system-admin': Server,
@@ -281,7 +282,7 @@ function Registration({
     setStatus('sending');
     setError('');
     try {
-      const response = await fetch('/api/registrations', {
+      const response = await fetch(apiUrl('/api/registrations'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, consent: data.consent === 'on' }),

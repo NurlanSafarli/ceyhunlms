@@ -61,6 +61,7 @@ final class App
             'admin_username' => null,
             'admin_password' => null,
             'trust_proxy' => 0,
+            'public_origins' => ['https://nurlansafarli.github.io'],
         ];
         $this->defaults = json_decode(file_get_contents($cfg['defaults_path']), true);
         $this->db = Database::open($cfg['db_path'], $this->defaults, $cfg['legacy_path']);
@@ -145,6 +146,7 @@ final class App
         $this->securityHeaders();
         header('Cache-Control: no-store');
         try {
+            $this->publicCors();
             $this->rawBody = file_get_contents('php://input') ?: '';
             $this->parseJson();
             $this->route();
@@ -186,6 +188,32 @@ final class App
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
     }
+    // Only public content and registration are shared with the static Pages site.
+    // Admin login, cookies and CSRF remain on the PHP origin.
+    private function publicCors(): void
+    {
+        $path = rtrim($this->path, '/');
+        $read = $path === '/api/public/content' || $path === '/api/public/logo'
+            || $path === '/api/public/instructor-photo'
+            || preg_match('#^/api/public/instructor-photos/[^/]+$#', $path);
+        $register = $path === '/api/registrations';
+        if (!$read && !$register) return;
+        if ($read) header('Cross-Origin-Resource-Policy: cross-origin');
+        header('Vary: Origin');
+        $origin = $this->header('origin');
+        if ($origin === null || !in_array($origin, $this->cfg['public_origins'], true)) return;
+        $allowed = $read ? ['GET', 'HEAD'] : ['POST'];
+        $method = $this->method === 'OPTIONS' ? $this->header('access-control-request-method') : $this->method;
+        if (!in_array($method, $allowed, true)) return;
+        header('Access-Control-Allow-Origin: ' . $origin);
+        if ($this->method === 'OPTIONS') {
+            header('Access-Control-Allow-Methods: ' . implode(', ', $allowed));
+            header('Access-Control-Allow-Headers: Content-Type');
+            header('Access-Control-Max-Age: 600');
+            $this->send(204, '', 'text/plain');
+        }
+    }
+
     private function parseJson(): void
     {
         if (!$this->contentTypeIs('application/json')) return;
@@ -306,9 +334,10 @@ final class App
             $this->all('SELECT id,version FROM public_images ORDER BY rowid'),
         );
         $settings['instructorPhotoUrl'] = $settings['instructorPhotos'][0]['url'] ?? '';
-        if ($publishedOnly)
+        if ($publishedOnly) {
             $settings['partners'] = array_values(array_filter($settings['partners'] ?? [], fn($s) => !empty($s['published'])));
             $settings['solutions'] = array_values(array_filter($settings['solutions'] ?? [], fn($s) => !empty($s['published'])));
+        }
         $where = $publishedOnly ? ' WHERE published=1' : '';
         $courses = array_map(fn($c) => $this->courseRow($c), $this->all("SELECT * FROM courses$where ORDER BY sort_order,id"));
         $faqs = array_map(fn($f) => ['published' => (bool) $f['published']] + $f, $this->all("SELECT * FROM faqs$where ORDER BY sort_order,id"));

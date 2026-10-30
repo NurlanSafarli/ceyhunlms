@@ -22,10 +22,23 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm test
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_sqlite, mbstring, gd
+          coverage: none
+      - run: npm run test:php
+      - run: npm run build
+      - run: node scripts/package-php.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jayhuntech-php-hosting
+          path: dist-php/
+          include-hidden-files: true
       - run: npm run build:pages
         env:
-          VITE_ADMIN_URL: ${{ vars.ADMIN_PANEL_URL }}
+          VITE_ADMIN_URL: ${{ vars.ADMIN_PANEL_URL || 'https://jayhuntech.az/admin' }}
+          VITE_API_ORIGIN: ${{ vars.PHP_API_ORIGIN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist-pages
