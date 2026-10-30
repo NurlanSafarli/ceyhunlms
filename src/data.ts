@@ -17,7 +17,9 @@ export type Course = {
   sort_order: number;
   modules: { title: string; duration: string; topics: string[]; lab: string }[];
 };
-export type Settings = typeof defaults.settings & {
+export type Partner = { id: string; name: string; published: boolean; logoUrl?: string };
+export type Settings = Omit<typeof defaults.settings, 'partners'> & {
+  partners: Partner[];
   instructorPhotos: { id: string; url: string }[];
 };
 export type Faq = {

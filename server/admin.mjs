@@ -190,6 +190,46 @@ export function installAdmin(app, db) {
     res.json({ logoUrl: '' });
   });
 
+  const partnerExists = (id) => {
+    if (!readContent(db, false).settings.partners.some((p) => p.id === id))
+      fail('Əvvəlcə şirkəti yadda saxlayın.', 404);
+  };
+  const sendPartnerLogo = (id, res) => {
+    const logo = db.prepare('SELECT data FROM partner_logos WHERE id=?').get(id);
+    if (!logo) fail('Loqo tapılmadı.', 404);
+    res.set('Cache-Control', 'no-store').type('image/webp').send(Buffer.from(logo.data));
+  };
+  app.get('/api/public/partner-logos/:id', (req, res) => {
+    const settings = readContent(db, true).settings;
+    if (!settings.showPartners || !settings.partners.some((p) => p.id === req.params.id))
+      fail('Loqo tapılmadı.', 404);
+    sendPartnerLogo(req.params.id, res);
+  });
+  app.get('/api/admin/partners/:id/logo', (req, res) => {
+    partnerExists(req.params.id);
+    sendPartnerLogo(req.params.id, res);
+  });
+  app.put(
+    '/api/admin/partners/:id/logo',
+    express.raw({ type: 'application/octet-stream', limit: '5mb' }),
+    async (req, res) => {
+      partnerExists(req.params.id);
+      if (!Buffer.isBuffer(req.body) || !req.body.length) fail('Loqo faylı tələb olunur.');
+      const image = await preparePhoto(req.body);
+      partnerExists(req.params.id);
+      const version = randomUUID();
+      db.prepare(
+        'INSERT INTO partner_logos VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,version=excluded.version',
+      ).run(req.params.id, image, version);
+      res.json({ logoUrl: `/api/admin/partners/${req.params.id}/logo?v=${version}` });
+    },
+  );
+  app.delete('/api/admin/partners/:id/logo', (req, res) => {
+    partnerExists(req.params.id);
+    db.prepare('DELETE FROM partner_logos WHERE id=?').run(req.params.id);
+    res.json({ logoUrl: '' });
+  });
+
   app.get('/api/public/instructor-photo', (_req, res) => {
     const photo = db.prepare("SELECT data FROM public_images WHERE id='instructor'").get();
     if (!photo) return res.status(404).json({ error: 'Şəkil tapılmadı.' });
@@ -317,7 +357,10 @@ export function installAdmin(app, db) {
       current[key] = url.href;
     }
     db.prepare('UPDATE site_settings SET data=? WHERE id=1').run(JSON.stringify(current));
-    res.json(current);
+    const ids = new Set(current.partners.map((p) => p.id));
+    for (const { id } of db.prepare('SELECT id FROM partner_logos').all())
+      if (!ids.has(id)) db.prepare('DELETE FROM partner_logos WHERE id=?').run(id);
+    res.json(readContent(db, false).settings);
   });
 
   const listSpecs = {

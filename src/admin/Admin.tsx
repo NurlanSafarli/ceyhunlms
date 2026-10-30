@@ -1302,7 +1302,7 @@ export default function Admin() {
                       </div>
                     </section>
                   ))}
-                  <PartnersEditor settings={settings} setSettings={setSettings} />
+                  <PartnersEditor settings={settings} setSettings={setSettings} request={request} />
                   <ContentExtras settings={settings} setSettings={setSettings} request={request} />
                   <div className="ad-settings-save">
                     <p>Yadda saxlanılan dəyişikliklər serverli saytda görünür.</p>

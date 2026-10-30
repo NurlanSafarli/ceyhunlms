@@ -26,6 +26,18 @@ export default function Partners() {
             <span className="partner-number" aria-hidden="true">
               {String(index + 1).padStart(2, '0')}
             </span>
+            {partner.logoUrl && (
+              <div className="partner-logo-frame">
+                <img
+                  className="partner-logo"
+                  src={partner.logoUrl}
+                  alt=""
+                  loading="lazy"
+                  width="160"
+                  height="64"
+                />
+              </div>
+            )}
             <strong>{partner.name}</strong>
           </li>
         ))}

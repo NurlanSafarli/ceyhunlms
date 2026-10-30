@@ -195,7 +195,8 @@ final class App
         $path = rtrim($this->path, '/');
         $read = $path === '/api/public/content' || $path === '/api/public/logo'
             || $path === '/api/public/instructor-photo'
-            || preg_match('#^/api/public/instructor-photos/[^/]+$#', $path);
+            || preg_match('#^/api/public/instructor-photos/[^/]+$#', $path)
+            || preg_match('#^/api/public/partner-logos/[^/]+$#', $path);
         $register = $path === '/api/registrations';
         if (!$read && !$register) return;
         if ($read) header('Cross-Origin-Resource-Policy: cross-origin');
@@ -253,6 +254,12 @@ final class App
             if (!$logo) $this->json(['error' => 'Loqo tapılmadı.'], 404);
             $this->publicImage($logo['data']);
         }
+        if ($m === 'GET' && preg_match('#^/api/public/partner-logos/([^/]+)$#', $p, $mm)) {
+            $settings = $this->readContent(true)['settings'];
+            if (empty($settings['showPartners']) || !in_array($mm[1], array_column($settings['partners'], 'id'), true))
+                fail('Loqo tapılmadı.', 404);
+            $this->partnerLogo($mm[1]);
+        }
         if ($m === 'GET' && $p === '/api/public/instructor-photo') {
             $row = $this->one("SELECT data FROM public_images WHERE id='instructor'");
             if (!$row) $this->json(['error' => 'Şəkil tapılmadı.'], 404);
@@ -266,6 +273,14 @@ final class App
 
         if (preg_match('#^/api/admin(/|$)#', $p)) $this->admin($m, $p);
     }
+    private function partnerLogo(string $id): never
+    {
+        $logo = $this->one('SELECT data FROM partner_logos WHERE id=?', [$id]);
+        if (!$logo) fail('Loqo tapılmadı.', 404);
+        header('Cache-Control: no-store');
+        $this->send(200, $logo['data'], 'image/webp');
+    }
+
     private function publicImage(string $data): never
     {
         header_remove('Cache-Control');
@@ -334,6 +349,16 @@ final class App
             $this->all('SELECT id,version FROM public_images ORDER BY rowid'),
         );
         $settings['instructorPhotoUrl'] = $settings['instructorPhotos'][0]['url'] ?? '';
+        $partnerLogos = array_column($this->all('SELECT id,version FROM partner_logos'), 'version', 'id');
+        $settings['partners'] = array_map(function ($partner) use ($partnerLogos, $publishedOnly) {
+            unset($partner['logoUrl']);
+            $id = $partner['id'];
+            if (isset($partnerLogos[$id])) {
+                $version = $partnerLogos[$id];
+                $partner['logoUrl'] = $publishedOnly ? "/api/public/partner-logos/$id?v=$version" : "/api/admin/partners/$id/logo?v=$version";
+            }
+            return $partner;
+        }, $settings['partners']);
         if ($publishedOnly) {
             $settings['partners'] = array_values(array_filter($settings['partners'] ?? [], fn($s) => !empty($s['published'])));
             $settings['solutions'] = array_values(array_filter($settings['solutions'] ?? [], fn($s) => !empty($s['published'])));
@@ -471,6 +496,28 @@ final class App
         }
         if ($m === 'GET' && $r === '/dashboard') $this->dashboard();
         if ($m === 'GET' && $r === '/options') $this->options();
+        if (preg_match('#^/partners/([a-zA-Z0-9_-]+)/logo$#', $r, $mm)) {
+            $id = $mm[1];
+            $partners = $this->readContent(false)['settings']['partners'];
+            if (!in_array($id, array_column($partners, 'id'), true)) fail('Əvvəlcə şirkəti yadda saxlayın.', 404);
+            if ($m === 'GET') $this->partnerLogo($id);
+            if ($m === 'PUT') {
+                $image = Images::prepare($this->rawFile(5 * 1024 * 1024, 'Loqo faylı tələb olunur.'));
+                $this->db->exec('BEGIN IMMEDIATE');
+                try {
+                    if (!in_array($id, array_column($this->readContent(false)['settings']['partners'], 'id'), true))
+                        fail('Əvvəlcə şirkəti yadda saxlayın.', 404);
+                    $v = Auth::uuid();
+                    $this->run('INSERT INTO partner_logos VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,version=excluded.version', [$id, new Blob($image), $v]);
+                    $this->db->exec('COMMIT');
+                } catch (Throwable $e) { $this->db->exec('ROLLBACK'); throw $e; }
+                $this->json(['logoUrl' => "/api/admin/partners/$id/logo?v=$v"]);
+            }
+            if ($m === 'DELETE') {
+                $this->run('DELETE FROM partner_logos WHERE id=?', [$id]);
+                $this->json(['logoUrl' => '']);
+            }
+        }
         if ($r === '/logo') {
             if ($m === 'PUT') {
                 $image = Images::prepare($this->rawFile(5 * 1024 * 1024, 'Loqo faylı tələb olunur.'));
@@ -716,6 +763,10 @@ final class App
         }
         unset($current['logoUrl'], $current['instructorPhotoUrl'], $current['instructorPhotos']);
         $this->run('UPDATE site_settings SET data=? WHERE id=1', [json_encode($current, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+        $ids = array_column($current['partners'], 'id');
+        foreach ($this->all('SELECT id FROM partner_logos') as $logo) {
+            if (!in_array($logo['id'], $ids, true)) $this->run('DELETE FROM partner_logos WHERE id=?', [$logo['id']]);
+        }
         $this->json($this->readContent(false)['settings']);
     }
     private static function httpsUrl(string $value, string $key): string
@@ -1134,6 +1185,7 @@ final class Database
             CREATE TABLE IF NOT EXISTS admin_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, created_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, admin_id TEXT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS site_logo (id INTEGER PRIMARY KEY CHECK(id=1), data BLOB NOT NULL, version TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS partner_logos (id TEXT PRIMARY KEY, data BLOB NOT NULL, version TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS public_images (id TEXT PRIMARY KEY, data BLOB NOT NULL, version TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS site_settings (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS courses (id TEXT PRIMARY KEY, data TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);
