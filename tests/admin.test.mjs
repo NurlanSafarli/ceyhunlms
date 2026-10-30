@@ -624,6 +624,45 @@ test('instructor photo upload validates images, survives backup and can be remov
   );
 });
 
+test('partners persist, retain order and hide unpublished companies from public content', async () => {
+  const partners = [
+    { id: 'company-b', name: 'Şirkət B MMC', published: true },
+    { id: 'company-a', name: 'Şirkət A MMC', published: false },
+  ];
+  assert.equal(
+    (await call('/api/admin/settings', { method: 'PUT', body: { partners } })).status,
+    200,
+  );
+  assert.deepEqual((await call('/api/admin/settings')).data.partners, partners);
+  assert.deepEqual((await call('/api/public/content', { auth: false })).data.settings.partners, [
+    partners[0],
+  ]);
+  for (const invalid of [
+    [...partners, partners[0]],
+    [{ ...partners[0], name: '' }],
+    [{ ...partners[0], name: 'x'.repeat(161) }],
+    Array(101).fill(partners[0]),
+    'invalid',
+  ]) {
+    assert.equal(
+      (await call('/api/admin/settings', { method: 'PUT', body: { partners: invalid } })).status,
+      400,
+    );
+  }
+  assert.deepEqual((await call('/api/admin/settings')).data.partners, partners);
+  assert.equal(
+    (await call('/api/admin/settings', { method: 'PUT', body: { partners: [] } })).status,
+    200,
+  );
+  const reopened = openDatabase(dbPath);
+  assert.deepEqual(
+    JSON.parse(reopened.prepare('SELECT data FROM site_settings').get().data).partners,
+    [],
+  );
+  reopened.close();
+  assert.deepEqual((await call('/api/public/content', { auth: false })).data.settings.partners, []);
+});
+
 test('IT solutions can be created, edited, hidden and deleted without reseeding', async () => {
   const solutions = [
     {

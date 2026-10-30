@@ -104,16 +104,16 @@ Canlı sayt cPanel paylaşımlı hostinqdə işləyir. Orada Node.js yoxdur, ona
 
 **Serverdəki quruluş:**
 
-| Serverdə | Repozitoriyada |
-| --- | --- |
-| `public_html/` (sayt) | `npm run build` → `dist/` qovluğunun içindəkilər |
-| `public_html/api.php` | `php/api.php` |
-| `public_html/.htaccess` | `php/htaccess.txt` |
-| `jayhuntech/app.php`, `jayhuntech/bootstrap.php` | `php/app.php`, `php/bootstrap.php` |
-| `jayhuntech/shared/default-content.json` | `shared/default-content.json` |
-| `jayhuntech/shared/legacy-solutions.json` | `server/legacy-solutions.json` |
-| `jayhuntech/config.php` | `php/config.example.php` əsasında (repoya əlavə edilmir) |
-| `jayhuntech/data/registrations.sqlite` | baza — **heç vaxt üzərinə yazmayın** |
+| Serverdə                                         | Repozitoriyada                                           |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| `public_html/` (sayt)                            | `npm run build` → `dist/` qovluğunun içindəkilər         |
+| `public_html/api.php`                            | `php/api.php`                                            |
+| `public_html/.htaccess`                          | `php/htaccess.txt`                                       |
+| `jayhuntech/app.php`, `jayhuntech/bootstrap.php` | `php/app.php`, `php/bootstrap.php`                       |
+| `jayhuntech/shared/default-content.json`         | `shared/default-content.json`                            |
+| `jayhuntech/shared/legacy-solutions.json`        | `server/legacy-solutions.json`                           |
+| `jayhuntech/config.php`                          | `php/config.example.php` əsasında (repoya əlavə edilmir) |
+| `jayhuntech/data/registrations.sqlite`           | baza — **heç vaxt üzərinə yazmayın**                     |
 
 `jayhuntech/` qovluğu `public_html`-dən kənardadır, ona görə kod və baza internetdən görünmür.
 
@@ -141,9 +141,21 @@ Hosting üçün yeni kod yazmaq lazım deyil. Serverinizdə Docker Compose və d
 
 Admin keçidi: https://nurlansafarli.github.io/ceyhunlms/admin/
 
-GitHub Pages Node.js/SQLite işlətmir. Oradakı qeydiyyat WhatsApp mesajı hazırlayır; lokal baza ilə əlaqəsi yoxdur. Admin keçidi server qoşulana qədər bunu bildirir. Lokal paneldə dəyişdirdiyiniz məzmun lokal saytda görünür, GitHub Pages-ə avtomatik ötürülmür. Serverə keçəndə tam sayt həmin serverin domenində işləyəcək.
+GitHub Pages yalnız statik frontend-i yayımlayır. Backend PHP 8.2+ hostinqdə işləyir; hostinqdə Node.js tələb edilmir. Node.js GitHub Actions-da frontend fayllarını yığmaq və testləri idarə etmək üçündür.
 
-Pages üçün `npm run build:pages` → `dist-pages/`. `.github/workflows/pages.yml` hər `main` push-dan sonra yayımlayır. GitHub **Settings → Pages → Source: GitHub Actions** seçilməlidir. Server hazır olduqda repozitoriyanın **Settings → Secrets and variables → Actions → Variables** bölməsində `ADMIN_PANEL_URL` dəyişənini real HTTPS admin ünvanına təyin edib **Actions → Publish Jayhun Tech to GitHub Pages → Run workflow** başladın. Bu dəyişənə parol və token yazılmır.
+`.github/workflows/pages.yml` hər `main` push-dan sonra PHP testlərini işlədir, Pages saytını yayımlayır və **jayhuntech-php-hosting** adlı hazır hostinq paketini artifact kimi yaradır. GitHub **Settings → Pages → Source: GitHub Actions** seçilməlidir.
+
+PHP hostinqə keçid:
+
+1. Uğurlu Actions yayımının **Artifacts → jayhuntech-php-hosting** paketini endirin. Paketdə server üçün Node.js faylları, parol və baza yoxdur.
+2. Paketdəki `QURASDIRMA.txt` üzrə PHP və hazır frontend fayllarını cPanel-ə yükləyin. Mövcud `config.php` və `data/` qorunmalıdır. PHP 8.2+, PDO SQLite, mbstring və GD tələb edilir.
+3. `https://jayhuntech.az/api/health` və `/admin` ünvanlarını yoxlayın. PHP API yalnız `https://nurlansafarli.github.io` origin-inə ictimai məzmun və qeydiyyat üçün CORS icazəsi verir; admin sorğuları bu icazəyə daxil deyil.
+4. GitHub **Settings → Secrets and variables → Actions → Variables** daxilində `PHP_API_ORIGIN=https://jayhuntech.az` təyin edin. `ADMIN_PANEL_URL` standart olaraq `https://jayhuntech.az/admin` ünvanıdır; başqa hostinq üçün dəyişdirin. Bu sahələrə parol və token yazılmır.
+5. **Actions → Publish Jayhun Tech to GitHub Pages → Run workflow** başladın. Bundan sonra Pages məzmunu PHP bazasından oxuyur, müraciətləri PHP API-yə göndərir və admin dəyişiklikləri səhifə yeniləndikdə görünür. Admin girişi PHP domenində açılır.
+
+`PHP_API_ORIGIN` boş olduqda Pages ilkin statik məzmunu göstərir və qeydiyyat WhatsApp mesajı hazırlayır. Bu, hostinq qoşulana qədər işlək rejimdir. API bağlantısı aktiv olduğu halda göndərmə xətası istifadəçiyə göstərilir; müraciət göndərilmədən uğur mesajı göstərilmir.
+
+Lokal Pages build-i: `VITE_API_ORIGIN=https://jayhuntech.az VITE_ADMIN_URL=https://jayhuntech.az/admin npm run build:pages`. Hazır PHP paketi üçün `npm run build && node scripts/package-php.mjs`.
 
 ## İnkişaf və yoxlamalar
 

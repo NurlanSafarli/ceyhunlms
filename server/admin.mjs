@@ -253,6 +253,19 @@ export function installAdmin(app, db) {
       current = readContent(db, false).settings;
     for (const [key, value] of Object.entries(b)) {
       if (key === 'logoUrl' || key === 'instructorPhotoUrl' || key === 'instructorPhotos') continue; // Derived from the separately uploaded image.
+      if (key === 'partners') {
+        if (!Array.isArray(value) || value.length > 100) fail('Ən çox 100 şirkət əlavə edin.');
+        const ids = new Set();
+        current.partners = value.map((item) => {
+          if (!item || typeof item !== 'object' || Array.isArray(item))
+            fail('Şirkət düzgün deyil.');
+          const id = text(item, 'id', 100, true);
+          if (!/^[a-zA-Z0-9_-]+$/.test(id) || ids.has(id)) fail('Şirkətin kodu unikal olmalıdır.');
+          ids.add(id);
+          return { id, name: text(item, 'name', 160, true), published: !!bool(item, 'published') };
+        });
+        continue;
+      }
       if (key === 'solutions') {
         if (!Array.isArray(value) || value.length > 12) fail('Ən çox 12 IT həlli əlavə edin.');
         const ids = new Set();

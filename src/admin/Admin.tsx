@@ -1,5 +1,5 @@
 import BrandIdentity from '../BrandIdentity';
-import ContentExtras, { InstructorPhotoEditor, LogoEditor } from './ContentExtras';
+import ContentExtras, { InstructorPhotoEditor, LogoEditor, PartnersEditor } from './ContentExtras';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
@@ -1302,6 +1302,7 @@ export default function Admin() {
                       </div>
                     </section>
                   ))}
+                  <PartnersEditor settings={settings} setSettings={setSettings} />
                   <ContentExtras settings={settings} setSettings={setSettings} request={request} />
                   <div className="ad-settings-save">
                     <p>Yadda saxlanılan dəyişikliklər serverli saytda görünür.</p>

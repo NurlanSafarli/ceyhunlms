@@ -1,3 +1,4 @@
+import { apiUrl, publicAssetUrl, staticOnly } from './api';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { usePreferences } from './preferences';
 import { courses, faqs, settings, type Course, type Faq, type Settings } from './data';
@@ -9,16 +10,30 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const { t, language } = usePreferences();
   const [content, setContent] = useState(fallback);
   useEffect(() => {
-    if (import.meta.env.MODE === 'pages') return;
+    if (staticOnly) return;
     const controller = new AbortController();
-    fetch('/api/public/content', { signal: controller.signal })
+    fetch(apiUrl('/api/public/content'), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error();
         return response.json();
       })
       .then((data) => {
         if (Array.isArray(data.courses) && Array.isArray(data.faqs) && data.settings)
-          setContent(data);
+          setContent({
+            ...data,
+            settings: {
+              ...settings,
+              ...data.settings,
+              logoUrl: publicAssetUrl(data.settings.logoUrl || ''),
+              instructorPhotoUrl: publicAssetUrl(data.settings.instructorPhotoUrl || ''),
+              instructorPhotos: (data.settings.instructorPhotos || []).map(
+                (photo: { id: string; url: string }) => ({
+                  ...photo,
+                  url: publicAssetUrl(photo.url),
+                }),
+              ),
+            },
+          });
       })
       .catch(() => {});
     return () => controller.abort();

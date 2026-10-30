@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+const defaults = JSON.parse(
+  readFileSync(new URL('../../shared/default-content.json', import.meta.url), 'utf8'),
+);
 import { test, expect } from '@playwright/test';
 import { selectLanguage } from '../language-picker';
 
@@ -27,6 +31,7 @@ test('Pages loads assets and syllabus under its repository subpath', async ({ pa
 test('Pages prepares a WhatsApp draft without pretending to submit or contacting an API', async ({
   page,
 }) => {
+  test.skip(!!process.env.VITE_API_ORIGIN, 'PHP-connected Pages uses the API');
   const apiRequests: string[] = [];
   page.on('request', (req) => {
     if (req.url().includes('/api/') || req.url().includes('wa.me')) apiRequests.push(req.url());
@@ -55,6 +60,7 @@ test('Pages prepares a WhatsApp draft without pretending to submit or contacting
 });
 
 test('Pages privacy and FAQ explain the WhatsApp registration flow', async ({ page }) => {
+  test.skip(!!process.env.VITE_API_ORIGIN, 'PHP-connected Pages uses the API');
   await page.goto('./#register');
   await page.locator('.consent button').click();
   await expect(page.getByRole('dialog')).toContainText('WhatsApp xidmətinə ötürülür');
@@ -72,5 +78,13 @@ test('Pages language picker supports repeated touch selections', async ({ page }
   ]) {
     await selectLanguage(page, language);
     await expect(page.locator('html')).toHaveAttribute('lang', language);
+  }
+});
+
+test.beforeEach(async ({ page }) => {
+  if (process.env.VITE_API_ORIGIN) {
+    await page.route(process.env.VITE_API_ORIGIN + '/api/public/content', (route) =>
+      route.fulfill({ json: defaults, headers: { 'access-control-allow-origin': '*' } }),
+    );
   }
 });

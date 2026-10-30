@@ -1,3 +1,6 @@
+import { apiUrl, staticOnly } from './api';
+import TechnologyStrip from './TechnologyStrip';
+import Partners from './Partners';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowDownToLine,
@@ -37,7 +40,7 @@ import BrandIdentity from './BrandIdentity';
 import ContactDock from './ContactDock';
 import { usePreferences, useLocalizedView } from './preferences';
 
-const pagesMode = import.meta.env.MODE === 'pages';
+const pagesMode = staticOnly;
 const courseIcons: Record<string, typeof Headphones> = {
   'help-desk': Headphones,
   'system-admin': Server,
@@ -279,7 +282,7 @@ function Registration({
     setStatus('sending');
     setError('');
     try {
-      const response = await fetch('/api/registrations', {
+      const response = await fetch(apiUrl('/api/registrations'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, consent: data.consent === 'on' }),
@@ -768,49 +771,7 @@ export default function App() {
             </div>
           </div>
         </section>
-        <div className="tech-strip">
-          <div className="section-container tech-strip-inner">
-            <span className="tech-strip-label">
-              ÖYRƏNƏCƏYİN
-              <br />
-              <strong>TEXNOLOGİYALAR</strong>
-            </span>
-            <span className="tech-logo windows-logo">
-              <span className="windows-mark">
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-              Windows
-            </span>
-            <span className="tech-logo">
-              <Terminal size={24} /> Linux
-            </span>
-            <span className="tech-logo cisco-logo">
-              <span className="cisco-bars">
-                {[9, 16, 23, 13, 23, 16, 9].map((h, i) => (
-                  <i style={{ height: h }} key={i} />
-                ))}
-              </span>
-              cisco
-            </span>
-            <span className="tech-logo active-directory">
-              <Layers3 size={25} />
-              <span>
-                Active
-                <br />
-                Directory
-              </span>
-            </span>
-            <span className="tech-logo vmware-logo">
-              vmware<span>®</span>
-            </span>
-            <span className="tech-logo powershell-logo">
-              <span>❯_</span>PowerShell
-            </span>
-          </div>
-        </div>
+        <TechnologyStrip />
         <section
           className="courses-section section-container"
           id="courses"
@@ -1124,6 +1085,7 @@ export default function App() {
           </div>
         </section>
 
+        <Partners />
         <section className="process-section" hidden={!settings.showProcess}>
           <div className="section-container">
             <div className="section-heading">

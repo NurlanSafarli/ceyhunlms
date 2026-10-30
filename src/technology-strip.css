@@ -1,0 +1,135 @@
+.technology-strip {
+  border-block: 1px solid var(--line);
+  padding: 15px 0 20px;
+  background: #f2f6ff;
+}
+.technology-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+.technology-heading > span {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.technology-heading button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.technology-window {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+}
+.technology-track {
+  display: flex;
+  width: max-content;
+  animation: technology-scroll 65s linear infinite;
+}
+.technology-group {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  flex-shrink: 0;
+  gap: 48px;
+  padding: 0 24px;
+  margin: 0;
+  list-style: none;
+}
+.technology-group li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  min-height: 48px;
+  color: var(--muted);
+}
+.technology-group img {
+  opacity: 0.65;
+  object-fit: contain;
+}
+.technology-name {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+}
+.technology-name small {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+.technology-windows {
+  display: grid;
+  grid-template-columns: repeat(2, 10px);
+  gap: 2px;
+}
+.technology-windows i {
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+}
+.technology-hpe {
+  width: 32px;
+  height: 14px;
+  border: 4px solid #01a982;
+}
+.brand-aruba {
+  color: #db6b19;
+}
+.brand-hikvision,
+.brand-dahua {
+  font-style: italic;
+}
+.brand-omada {
+  letter-spacing: 1px;
+}
+.technology-window:hover .technology-track,
+.technology-window.is-paused .technology-track {
+  animation-play-state: paused;
+}
+@keyframes technology-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+[data-theme='dark'] .technology-strip {
+  background: #152239;
+}
+[data-theme='dark'] .technology-group img {
+  filter: invert(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .technology-track {
+    animation: none;
+  }
+  .technology-window {
+    overflow-x: auto;
+    mask-image: none;
+  }
+  .technology-group[aria-hidden='true'] {
+    display: none;
+  }
+  .technology-heading button {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .technology-group {
+    gap: 32px;
+    padding-inline: 16px;
+  }
+  .technology-name {
+    font-size: 16px;
+  }
+}

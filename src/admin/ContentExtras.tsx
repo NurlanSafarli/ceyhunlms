@@ -344,3 +344,130 @@ export function LogoEditor({ settings, setSettings, request }: Props) {
     </div>
   );
 }
+
+export function PartnersEditor({ settings, setSettings }: Pick<Props, 'settings' | 'setSettings'>) {
+  const partners: Row[] = settings.partners || [];
+  function update(index: number, key: string, value: unknown) {
+    setSettings((s) => ({
+      ...s,
+      partners: s.partners.map((item: Row, i: number) =>
+        i === index ? { ...item, [key]: value } : item,
+      ),
+    }));
+  }
+  function move(index: number, direction: number) {
+    setSettings((s) => {
+      const items = [...s.partners];
+      [items[index], items[index + direction]] = [items[index + direction], items[index]];
+      return { ...s, partners: items };
+    });
+  }
+  return (
+    <section className="ad-panel ad-settings-section">
+      <div>
+        <h2>Partnyorlar və müştərilər</h2>
+        <p>
+          Xidmət göstərdiyiniz şirkətləri əlavə edin və sıralayın. Dəyişiklikləri aşağıdakı “Məzmunu
+          yadda saxla” düyməsi ilə yayımlayın.
+        </p>
+      </div>
+      <div className="ad-form-grid">
+        <label className="ad-checkbox ad-wide">
+          <input
+            type="checkbox"
+            checked={!!settings.showPartners}
+            onChange={(e) => setSettings((s) => ({ ...s, showPartners: e.target.checked }))}
+          />
+          Bölmə saytda görünsün
+        </label>
+        {(
+          [
+            ['partnersTitle', 'Şirkətlər bölməsinin başlığı'],
+            ['partnersDescription', 'Şirkətlər bölməsinin izahı'],
+            ['partnersProjectCount', 'Fərdi layihələrin sayı'],
+            ['partnersProjectLabel', 'Fərdi layihələrin başlığı'],
+          ] as const
+        ).map(([key, label]) => (
+          <label className="ad-field" key={key}>
+            {label}
+            <input
+              value={settings[key] || ''}
+              maxLength={key === 'partnersProjectCount' ? 30 : 300}
+              onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
+            />
+          </label>
+        ))}
+        {partners.map((item, index) => (
+          <fieldset className="ad-wide" key={item.id}>
+            <legend>Şirkət {index + 1}</legend>
+            <label className="ad-field" htmlFor={`partner-${item.id}`}>
+              Şirkətin adı
+            </label>
+            <input
+              id={`partner-${item.id}`}
+              value={item.name}
+              required
+              maxLength={160}
+              onChange={(e) => update(index, 'name', e.target.value)}
+            />
+            <label className="ad-checkbox">
+              <input
+                type="checkbox"
+                checked={item.published}
+                onChange={(e) => update(index, 'published', e.target.checked)}
+              />
+              Saytda yayımlansın
+            </label>
+            <div className="ad-partner-actions">
+              <button
+                type="button"
+                className="ad-btn ad-secondary"
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
+              >
+                Yuxarı
+              </button>
+              <button
+                type="button"
+                className="ad-btn ad-secondary"
+                disabled={index === partners.length - 1}
+                onClick={() => move(index, 1)}
+              >
+                Aşağı
+              </button>
+              <button
+                type="button"
+                className="ad-btn ad-secondary"
+                onClick={() => {
+                  if (window.confirm('Bu şirkət silinsin?'))
+                    setSettings((s) => ({
+                      ...s,
+                      partners: s.partners.filter((p: Row) => p.id !== item.id),
+                    }));
+                }}
+              >
+                Şirkəti sil
+              </button>
+            </div>
+          </fieldset>
+        ))}
+        <button
+          type="button"
+          className="ad-btn ad-secondary"
+          disabled={partners.length >= 100}
+          onClick={() =>
+            setSettings((s) => ({
+              ...s,
+              partners: [
+                ...(s.partners || []),
+                { id: crypto.randomUUID(), name: '', published: true },
+              ],
+            }))
+          }
+        >
+          Şirkət əlavə et
+        </button>
+      </div>
+    </section>
+  );
+}
