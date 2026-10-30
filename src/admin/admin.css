@@ -1869,3 +1869,10 @@
 .ad-sidebar > * {
   flex-shrink: 0;
 }
+
+.ad-partner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}

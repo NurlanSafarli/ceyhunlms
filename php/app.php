@@ -307,6 +307,7 @@ final class App
         );
         $settings['instructorPhotoUrl'] = $settings['instructorPhotos'][0]['url'] ?? '';
         if ($publishedOnly)
+            $settings['partners'] = array_values(array_filter($settings['partners'] ?? [], fn($s) => !empty($s['published'])));
             $settings['solutions'] = array_values(array_filter($settings['solutions'] ?? [], fn($s) => !empty($s['published'])));
         $where = $publishedOnly ? ' WHERE published=1' : '';
         $courses = array_map(fn($c) => $this->courseRow($c), $this->all("SELECT * FROM courses$where ORDER BY sort_order,id"));
@@ -643,6 +644,18 @@ final class App
         foreach ($b as $key => $value) {
             $key = (string) $key;
             if (in_array($key, ['logoUrl', 'instructorPhotoUrl', 'instructorPhotos'], true)) continue; // Derived from uploaded images.
+            if ($key === 'partners') {
+                if (!is_array($value) || !array_is_list($value) || count($value) > 100) fail('Ən çox 100 şirkət əlavə edin.');
+                $ids = [];
+                $current['partners'] = array_map(function ($item) use (&$ids) {
+                    if (!self::isObject($item)) fail('Şirkət düzgün deyil.');
+                    $id = self::text($item, 'id', 100, true);
+                    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $id) || isset($ids[$id])) fail('Şirkətin kodu unikal olmalıdır.');
+                    $ids[$id] = true;
+                    return ['id' => $id, 'name' => self::text($item, 'name', 160, true), 'published' => (bool) self::bool($item, 'published')];
+                }, $value);
+                continue;
+            }
             if ($key === 'solutions') {
                 if (!is_array($value) || !array_is_list($value) || count($value) > 12) fail('Ən çox 12 IT həlli əlavə edin.');
                 $ids = [];

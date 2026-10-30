@@ -105,6 +105,7 @@ export function readContent(db, publishedOnly = true) {
           : `/api/public/instructor-photos/${photo.id}?v=${photo.version}`,
     }));
   settings.instructorPhotoUrl = settings.instructorPhotos[0]?.url || '';
+  if (publishedOnly) settings.partners = settings.partners.filter((item) => item.published);
   if (publishedOnly) settings.solutions = settings.solutions.filter((item) => item.published);
   const where = publishedOnly ? ' WHERE published=1' : '';
   const courses = db
