@@ -17,3 +17,5 @@ tests/.php/
 php/config.php
 php/data/
 dist-php/
+
+__pycache__/

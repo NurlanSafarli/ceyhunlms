@@ -1,0 +1,67 @@
+name: Deploy PHP hosting via FTPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'shared/**'
+      - 'php/**'
+      - 'server/legacy-solutions.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'scripts/package-php.mjs'
+      - 'scripts/deploy-php.py'
+      - 'tests/deploy_php_test.py'
+      - '.github/workflows/php-hosting.yml'
+  workflow_dispatch:
+    inputs:
+      check_only:
+        description: 'Only verify FTPS and folders; do not upload files'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: php-hosting-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_sqlite, mbstring, gd
+          coverage: none
+      - run: npm ci
+      - run: python3 -m unittest discover -s tests -p deploy_php_test.py -v
+      - run: npm run test:php
+      - run: npm run build
+      - run: node scripts/package-php.mjs
+      - name: Verify FTPS and existing folders
+        run: python3 scripts/deploy-php.py --check-only
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      - name: Back up, upload and verify the PHP site
+        if: github.event_name == 'push' || !inputs.check_only
+        run: python3 scripts/deploy-php.py
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}

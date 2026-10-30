@@ -141,6 +141,18 @@ Server aldıqda **eyni tətbiqi və lokal ehtiyat nüsxəni** istifadə edin. `D
 
 Hosting üçün yeni kod yazmaq lazım deyil. Serverinizdə Docker Compose və domeniniz olmalıdır. Mövcud admin hesabınız ehtiyat nüsxə ilə daşınır. Konfiqurasiya bir server instansiyası üçündür.
 
+## PHP hostinqə avtomatik FTPS deploy
+
+`.github/workflows/php-hosting.yml` tətbiq faylları `main` branch-də dəyişəndə PHP hostinqə avtomatik yayım edir. Serverdə Node.js və ya Python quraşdırmaq lazım deyil; build və deploy GitHub Actions-da işləyir. Mövcud PHP kodu və `public_html` / `jayhuntech` quruluşu saxlanır.
+
+Repo **Settings → Secrets and variables → Actions** bölməsində `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD` repository secret-ləri olmalıdır. `FTP_HOST` yalnız host adıdır (məsələn, `ftp.jayhuntech.az`); port 21-dir. Proses yalnız etibarlı sertifikatla **explicit FTPS** istifadə edir. Plain FTP-yə avtomatik keçid və TLS yoxlamasını söndürmək yoxdur.
+
+FTP hesabı ilə daxil olduqda həm `public_html`, həm də `jayhuntech` qovluqları eyni əsas qovluqda görünməlidir. Mövcud `jayhuntech/config.php`, PHP faylları və `public_html/.htaccess` yoxlanılır; bu, yeni hostinq quraşdıran deyil, mövcud saytı yeniləyən prosesdir.
+
+Əl ilə başlatmaq: **Actions → Deploy PHP hosting via FTPS → Run workflow**. `check_only` seçili olduqda yalnız bağlantı və qovluqlar yoxlanır; heç nə yüklənmir. Yükləmək üçün seçimi söndürün. Yayımlar növbə ilə işləyir və yarıda avtomatik ləğv olunmur.
+
+Yalnız paketdəki tətbiq kodu və hazır frontend faylları yüklənir. `.htaccess`, `.user.ini`, `config.php`, `data/`, istifadəçi yükləmələri və digər server faylları dəyişdirilmir. Köhnə versiya və hazırlanan fayllar FTP əsas qovluğunda `.jayhun-deploy/<yayım-id>/` altında, `public_html`-dən kənarda saxlanır. Fayllar geri oxunaraq yoxlanılır, `index.html` ən sonda dəyişdirilir. Sonra ana səhifə, `/admin`, `/api/health` və ictimai məzmun yalnız GET sorğuları ilə yoxlanılır; sınaq qeydiyyatı göndərilmir. Xəta baş versə əvvəlki tətbiq faylları bərpa edilir; bağlantı itərsə bərpa üçün göstərilən backup qovluğu saxlanır. Baza ehtiyat nüsxəsini mövcud cPanel Backup qaydası ilə ayrıca idarə edin.
+
 ## GitHub Pages
 
 İctimai səhifə: https://nurlansafarli.github.io/ceyhunlms/
