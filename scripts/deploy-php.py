@@ -9,6 +9,7 @@ import os
 from pathlib import Path, PurePosixPath
 import posixpath
 import re
+import socket
 import ssl
 import sys
 import urllib.request
@@ -18,7 +19,16 @@ import uuid
 class VerifiedFTPS(ftplib.FTP_TLS):
     # Pure-FTPd commonly requires the data channel to reuse the control TLS session.
     def ntransfercmd(self, cmd, rest=None):
-        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
+        # Some of the hosting's passive ports are unreachable. The command is sent
+        # only after the data connection opens, so asking for a new port is safe.
+        for attempt in range(6):
+            try:
+                conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
+                break
+            except (socket.timeout, TimeoutError, ConnectionRefusedError):
+                if attempt == 5:
+                    raise
+                print('Passive data port unreachable; requesting another port.')
         if self._prot_p:
             conn = self.context.wrap_socket(
                 conn, server_hostname=self.host, session=self.sock.session
@@ -83,15 +93,16 @@ class Deployment:
         return posixpath.join(self.root, relative)
 
     def exists(self, path):
-        parent, name = posixpath.split(path)
+        # SIZE uses only the control channel. Repeated NLST data connections stall
+        # on the hosting's Pure-FTPd over TLS, so avoid opening one per file.
+        self.ftp.voidcmd('TYPE I')
         try:
-            self.ftp.cwd(parent)
+            self.ftp.size(path)
+            return True
         except ftplib.error_perm as error:
             if str(error).startswith('550'):
                 return False
             raise
-        names = {posixpath.basename(p.rstrip('/')) for p in self.ftp.nlst()}
-        return name in names
 
     def check_layout(self):
         for directory in ['public_html', 'jayhuntech']:

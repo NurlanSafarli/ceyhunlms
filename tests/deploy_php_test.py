@@ -37,9 +37,13 @@ class FakeFTP:
             raise ftplib.error_perm('550 Missing directory')
         self.current = path
 
-    def nlst(self):
-        return [path for path in list(self.files) + list(self.directories)
-                if path != self.current and posixpath.dirname(path) == self.current]
+    def voidcmd(self, command):
+        return '200 OK'
+
+    def size(self, path):
+        if path not in self.files:
+            raise ftplib.error_perm('550 Missing file')
+        return len(self.files[path])
 
     def mkd(self, path):
         self.directories.add(path)
